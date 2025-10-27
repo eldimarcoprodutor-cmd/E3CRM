@@ -1,7 +1,8 @@
 
+
 import React, { useState, useMemo } from 'react';
-import type { User, QuickReply, Message } from '../types';
-import { AiInputAssistant } from './AiInputAssistant';
+import type { User, QuickReply, Message } from '../types.ts';
+import { AiInputAssistant } from './AiInputAssistant.tsx';
 
 interface ChatInputFooterProps {
     value: string;

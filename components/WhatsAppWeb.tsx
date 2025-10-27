@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import type { User, Chat, Message, QuickReply } from '../types';
-import { ChatInterface } from './ChatInterface';
-import { BotIcon } from './icons/BotIcon';
+import type { User, Chat, Message, QuickReply } from '../types.ts';
+import { ChatInterface } from './ChatInterface.tsx';
+import { BotIcon } from './icons/BotIcon.tsx';
 
 interface WhatsAppWebProps {
     currentUser: User;

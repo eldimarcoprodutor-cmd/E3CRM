@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { User, Chat } from '../types';
+import type { User, Chat } from '../types.ts';
 
 interface AgentPerformance {
     id: string;

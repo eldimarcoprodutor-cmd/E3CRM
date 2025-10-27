@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { generateChatbotResponse } from '../services/geminiService';
-import type { KnowledgeBaseItem, ChatbotConfig } from '../types';
-import { supabase } from '../services/supabase';
+import { generateChatbotResponse } from '../services/geminiService.ts';
+import type { KnowledgeBaseItem, ChatbotConfig } from '../types.ts';
+import { supabase } from '../services/supabase.ts';
 
 // Define a modal component for adding/editing knowledge base items
 const KnowledgeItemModal: React.FC<{

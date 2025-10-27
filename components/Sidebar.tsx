@@ -1,17 +1,17 @@
 import React from 'react';
-import { DashboardIcon } from './icons/DashboardIcon';
-import { CrmIcon } from './icons/CrmIcon';
-import { ChatIcon } from './icons/ChatIcon';
-import { SettingsIcon } from './icons/SettingsIcon';
-import { SchedulingIcon } from './icons/SchedulingIcon';
-import { BroadcastIcon } from './icons/BroadcastIcon';
-import { ReportsIcon } from './icons/ReportsIcon';
-import { ChatbotIcon } from './icons/ChatbotIcon';
-import { ContactsIcon } from './icons/ContactsIcon';
-import { TeamIcon } from './icons/TeamIcon';
-import { LogsIcon } from './icons/LogsIcon';
-import { ChannelsIcon } from './icons/ChannelsIcon';
-import type { User } from '../types';
+import { DashboardIcon } from './icons/DashboardIcon.tsx';
+import { CrmIcon } from './icons/CrmIcon.tsx';
+import { ChatIcon } from './icons/ChatIcon.tsx';
+import { SettingsIcon } from './icons/SettingsIcon.tsx';
+import { SchedulingIcon } from './icons/SchedulingIcon.tsx';
+import { BroadcastIcon } from './icons/BroadcastIcon.tsx';
+import { ReportsIcon } from './icons/ReportsIcon.tsx';
+import { ChatbotIcon } from './icons/ChatbotIcon.tsx';
+import { ContactsIcon } from './icons/ContactsIcon.tsx';
+import { TeamIcon } from './icons/TeamIcon.tsx';
+import { LogsIcon } from './icons/LogsIcon.tsx';
+import { ChannelsIcon } from './icons/ChannelsIcon.tsx';
+import type { User } from '../types.ts';
 
 interface SidebarProps {
   isSidebarOpen: boolean;

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import type { CrmContact } from '../types';
+import type { CrmContact } from '../types.ts';
 
 interface ScheduledMessage {
     id: number;

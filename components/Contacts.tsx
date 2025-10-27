@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { CrmContact } from '../types';
+import type { CrmContact } from '../types.ts';
 
 interface ContactsProps {
     contacts: CrmContact[];

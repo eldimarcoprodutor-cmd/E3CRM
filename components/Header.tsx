@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import type { User, Theme } from '../types';
-import { ThemeSwitcher } from './ThemeSwitcher';
+import type { User, Theme } from '../types.ts';
+import { ThemeSwitcher } from './ThemeSwitcher.tsx';
 
 interface HeaderProps {
   toggleSidebar: () => void;

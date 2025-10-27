@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { QuickReply, User } from '../types';
-import { supabase } from '../services/supabase';
+import type { QuickReply, User } from '../types.ts';
+import { supabase } from '../services/supabase.ts';
 
 // Modal for adding/editing quick replies
 const QuickReplyModal: React.FC<{

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import type { User } from '../types';
-import { ChatIcon } from './icons/ChatIcon';
+import type { User } from '../types.ts';
+import { ChatIcon } from './icons/ChatIcon.tsx';
 
 interface LoginProps {
     users: User[];

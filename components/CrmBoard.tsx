@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { CrmContact, User, Note } from '../types';
+import type { CrmContact, User, Note } from '../types.ts';
 
 interface CrmBoardProps {
     contacts: CrmContact[];

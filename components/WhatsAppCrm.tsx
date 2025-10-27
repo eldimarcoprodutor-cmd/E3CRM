@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { User, Chat, Message, QuickReply, CrmContact } from '../types';
-import { BotIcon } from './icons/BotIcon';
-import { ActiveChatView } from './ActiveChatView';
+import type { User, Chat, Message, QuickReply, CrmContact } from '../types.ts';
+import { BotIcon } from './icons/BotIcon.tsx';
+import { ActiveChatView } from './ActiveChatView.tsx';
 
 interface WhatsAppCrmProps {
     currentUser: User;

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Theme } from '../types';
-import { SunIcon } from './icons/SunIcon';
-import { MoonIcon } from './icons/MoonIcon';
-import { DesktopComputerIcon } from './icons/DesktopComputerIcon';
+import type { Theme } from '../types.ts';
+import { SunIcon } from './icons/SunIcon.tsx';
+import { MoonIcon } from './icons/MoonIcon.tsx';
+import { DesktopComputerIcon } from './icons/DesktopComputerIcon.tsx';
 
 interface ThemeSwitcherProps {
   theme: Theme;

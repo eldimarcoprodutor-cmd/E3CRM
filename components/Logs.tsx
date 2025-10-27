@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { LogEntry, User } from '../types';
+import type { LogEntry, User } from '../types.ts';
 
 // Mock data for logs
 const initialLogs: LogEntry[] = [

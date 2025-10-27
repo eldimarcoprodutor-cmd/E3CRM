@@ -1,11 +1,12 @@
 
 
+
 import React, { useState, useRef, useEffect } from 'react';
-import type { Chat, Message, User, QuickReply } from '../types';
-import { ChatMessageComponent } from './ChatMessageComponent';
-import { ChatInputFooter } from './ChatInputFooter';
-import { generateReplySuggestion } from '../services/geminiService';
-import { BotIcon } from './icons/BotIcon';
+import type { Chat, Message, User, QuickReply } from '../types.ts';
+import { ChatMessageComponent } from './ChatMessageComponent.tsx';
+import { ChatInputFooter } from './ChatInputFooter.tsx';
+import { generateReplySuggestion } from '../services/geminiService.ts';
+import { BotIcon } from './icons/BotIcon.tsx';
 
 interface ChatInterfaceProps {
     chat: Chat;

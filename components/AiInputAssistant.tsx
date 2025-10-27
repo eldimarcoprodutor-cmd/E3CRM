@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { generateHumanizedResponse, correctSpellingAndGrammar, expandText } from '../services/geminiService';
+import { generateHumanizedResponse, correctSpellingAndGrammar, expandText } from '../services/geminiService.ts';
 
 interface AiInputAssistantProps {
   text: string;

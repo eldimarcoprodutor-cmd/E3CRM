@@ -1,25 +1,25 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Sidebar } from './components/Sidebar';
-import { Header } from './components/Header';
-import { Dashboard } from './components/Dashboard';
-import { CrmBoard } from './components/CrmBoard';
-import { WhatsAppWeb } from './components/WhatsAppWeb';
-import { Settings } from './components/Settings';
-import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel } from './types';
-import { Scheduling } from './components/Scheduling';
-import { Broadcast } from './components/Broadcast';
-import { Reports } from './components/Reports';
-import { Chatbot } from './components/Chatbot';
-import { Contacts } from './components/Contacts';
-import { Team } from './components/Team';
-import { WhatsAppCrm } from './components/WhatsAppCrm';
-import { Logs } from './components/Logs';
-import { Login } from './components/Login';
-import { Canais } from './components/Canais';
-import { WhatsAppIcon } from './components/icons/WhatsAppIcon';
-import { generateChatbotResponse } from './services/geminiService';
-import { supabase } from './services/supabase';
+import { Sidebar } from './components/Sidebar.tsx';
+import { Header } from './components/Header.tsx';
+import { Dashboard } from './components/Dashboard.tsx';
+import { CrmBoard } from './components/CrmBoard.tsx';
+import { WhatsAppWeb } from './components/WhatsAppWeb.tsx';
+import { Settings } from './components/Settings.tsx';
+import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel } from './types.ts';
+import { Scheduling } from './components/Scheduling.tsx';
+import { Broadcast } from './components/Broadcast.tsx';
+import { Reports } from './components/Reports.tsx';
+import { Chatbot } from './components/Chatbot.tsx';
+import { Contacts } from './components/Contacts.tsx';
+import { Team } from './components/Team.tsx';
+import { WhatsAppCrm } from './components/WhatsAppCrm.tsx';
+import { Logs } from './components/Logs.tsx';
+import { Login } from './components/Login.tsx';
+import { Canais } from './components/Canais.tsx';
+import { WhatsAppIcon } from './components/icons/WhatsAppIcon.tsx';
+import { generateChatbotResponse } from './services/geminiService.ts';
+import { supabase } from './services/supabase.ts';
 
 // Mock Data
 const usersData: User[] = [

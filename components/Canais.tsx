@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { Channel } from '../types';
-import { WhatsAppIcon } from './icons/WhatsAppIcon';
+import type { Channel } from '../types.ts';
+import { WhatsAppIcon } from './icons/WhatsAppIcon.tsx';
 
 const QRCodeModal: React.FC<{
     isOpen: boolean;

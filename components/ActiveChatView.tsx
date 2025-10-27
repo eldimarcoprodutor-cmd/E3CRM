@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import type { Chat, Message, User, QuickReply, CrmContact } from '../types';
-import { ChatInterface } from './ChatInterface';
-import { CrmIcon } from './icons/CrmIcon';
+import type { Chat, Message, User, QuickReply, CrmContact } from '../types.ts';
+import { ChatInterface } from './ChatInterface.tsx';
+import { CrmIcon } from './icons/CrmIcon.tsx';
 
 interface ActiveChatViewProps {
     chat: Chat;
