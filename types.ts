@@ -3,7 +3,8 @@ export interface User {
   name: string;
   avatar_url: string;
   role: 'Gerente' | 'Atendente';
-  email?: string;
+  email: string;
+  password?: string;
 }
 
 export interface Message {
@@ -79,3 +80,10 @@ export interface LogEntry {
 }
 
 export type Theme = 'light' | 'dark' | 'system';
+
+export interface Channel {
+  id: string;
+  name: string;
+  number: string;
+  status: 'Conectado' | 'Desconectado' | 'Conectando';
+}

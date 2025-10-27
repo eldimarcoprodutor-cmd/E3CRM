@@ -14,6 +14,7 @@ interface HeaderProps {
   setWhatsAppViewMode: (mode: 'integrado' | 'classico') => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  onLogout: () => void;
 }
 
 const ViewSwitcher: React.FC<{
@@ -43,7 +44,7 @@ const ViewSwitcher: React.FC<{
 };
 
 
-export const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, currentUser, setCurrentUser, users, activeView, whatsAppViewMode, setWhatsAppViewMode, theme, setTheme }) => {
+export const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, currentUser, setCurrentUser, users, activeView, whatsAppViewMode, setWhatsAppViewMode, theme, setTheme, onLogout }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -102,18 +103,29 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, cu
             </svg>
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-xl z-20">
-              <p className="p-2 text-xs text-text-secondary dark:text-gray-400">Trocar de usuário:</p>
-              {users.map(user => (
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-xl z-20 divide-y divide-gray-100 dark:divide-gray-600">
+              <div className="py-1">
+                <p className="px-4 pt-1 pb-2 text-xs text-text-secondary dark:text-gray-400">Trocar de usuário:</p>
+                {users.map(user => (
+                  <a
+                    key={user.id}
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); handleUserChange(user); }}
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  >
+                    {user.name} ({user.role})
+                  </a>
+                ))}
+              </div>
+              <div className="py-1">
                 <a
-                  key={user.id}
                   href="#"
-                  onClick={(e) => { e.preventDefault(); handleUserChange(user); }}
+                  onClick={(e) => { e.preventDefault(); onLogout(); }}
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
-                  {user.name} ({user.role})
+                  Sair
                 </a>
-              ))}
+              </div>
             </div>
           )}
         </div>

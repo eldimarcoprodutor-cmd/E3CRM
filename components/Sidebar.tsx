@@ -10,6 +10,7 @@ import { ChatbotIcon } from './icons/ChatbotIcon';
 import { ContactsIcon } from './icons/ContactsIcon';
 import { TeamIcon } from './icons/TeamIcon';
 import { LogsIcon } from './icons/LogsIcon';
+import { ChannelsIcon } from './icons/ChannelsIcon';
 import type { User } from '../types';
 
 interface SidebarProps {
@@ -49,6 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, activeView, set
         { id: 'broadcast', label: 'Broadcast', icon: <BroadcastIcon className="w-6 h-6" />, roles: ['Gerente', 'Atendente'] },
         { id: 'reports', label: 'Relatórios', icon: <ReportsIcon className="w-6 h-6" />, roles: ['Gerente'] },
         { id: 'chatbot', label: 'Chatbot IA', icon: <ChatbotIcon className="w-6 h-6" />, roles: ['Gerente'] },
+        { id: 'channels', label: 'Canais', icon: <ChannelsIcon className="w-6 h-6" />, roles: ['Gerente'] },
         { id: 'team', label: 'Equipe', icon: <TeamIcon className="w-6 h-6" />, roles: ['Gerente'] },
         { id: 'logs', label: 'Logs', icon: <LogsIcon className="w-6 h-6" />, roles: ['Gerente'] },
         { id: 'settings', label: 'Configurações', icon: <SettingsIcon className="w-6 h-6" />, roles: ['Gerente'] },

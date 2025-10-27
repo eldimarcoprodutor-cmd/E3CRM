@@ -13,6 +13,7 @@ const TeamMemberModal: React.FC<{
     memberToEdit: User | null;
 }> = ({ isOpen, onClose, onSave, memberToEdit }) => {
     const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
     const [role, setRole] = useState<'Gerente' | 'Atendente'>('Atendente');
     const isEditing = !!memberToEdit;
@@ -20,11 +21,13 @@ const TeamMemberModal: React.FC<{
     useEffect(() => {
         if (memberToEdit) {
             setName(memberToEdit.name);
+            setEmail(memberToEdit.email);
             setAvatarUrl(memberToEdit.avatar_url);
             setRole(memberToEdit.role);
         } else {
             // Reset form for new member
             setName('');
+            setEmail('');
             setAvatarUrl('');
             setRole('Atendente');
         }
@@ -34,12 +37,14 @@ const TeamMemberModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (name.trim() && role) {
+        if (name.trim() && role && email.trim()) {
             onSave({
                 id: memberToEdit?.id,
                 name,
+                email,
                 avatar_url: avatarUrl,
-                role
+                role,
+                password: memberToEdit?.password,
             });
             onClose();
         }
@@ -55,6 +60,10 @@ const TeamMemberModal: React.FC<{
                     <div>
                         <label className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Nome</label>
                         <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg"/>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Email</label>
+                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg"/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">URL do Avatar (Opcional)</label>
@@ -90,11 +99,14 @@ export const Team: React.FC<TeamProps> = ({ team, setTeam }) => {
         if (memberData.id) { // Editing
             setTeam(team.map(m => (m.id === memberData.id ? { ...m, ...memberData } as User : m)));
         } else { // Adding
+            // Fix: Add missing 'email' and 'password' properties to the new User object.
             const newMember: User = {
                 id: `user-${Date.now()}`,
                 name: memberData.name,
+                email: memberData.email,
                 avatar_url: memberData.avatar_url || `https://i.pravatar.cc/150?u=${Date.now()}`,
                 role: memberData.role,
+                password: 'password'
             };
             setTeam([newMember, ...team]);
         }

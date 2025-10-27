@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -5,7 +6,7 @@ import { Dashboard } from './components/Dashboard';
 import { CrmBoard } from './components/CrmBoard';
 import { WhatsAppWeb } from './components/WhatsAppWeb';
 import { Settings } from './components/Settings';
-import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme } from './types';
+import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel } from './types';
 import { Scheduling } from './components/Scheduling';
 import { Broadcast } from './components/Broadcast';
 import { Reports } from './components/Reports';
@@ -14,14 +15,17 @@ import { Contacts } from './components/Contacts';
 import { Team } from './components/Team';
 import { WhatsAppCrm } from './components/WhatsAppCrm';
 import { Logs } from './components/Logs';
+import { Login } from './components/Login';
+import { Canais } from './components/Canais';
+import { WhatsAppIcon } from './components/icons/WhatsAppIcon';
 import { generateChatbotResponse } from './services/geminiService';
 import { supabase } from './services/supabase';
 
 // Mock Data
 const usersData: User[] = [
-    { id: '1', name: 'Ana Silva', avatar_url: 'https://i.pravatar.cc/150?u=1', role: 'Gerente', email: 'ana.gerente@zapcrm.com' },
-    { id: '2', name: 'Bruno Gomes', avatar_url: 'https://i.pravatar.cc/150?u=2', role: 'Atendente', email: 'bruno.atendente@zapcrm.com' },
-    { id: '3', name: 'Carla Dias', avatar_url: 'https://i.pravatar.cc/150?u=3', role: 'Atendente', email: 'carla.atendente@zapcrm.com' },
+    { id: '1', name: 'Ana Silva', avatar_url: 'https://i.pravatar.cc/150?u=1', role: 'Gerente', email: 'ana.gerente@zapcrm.com', password: 'password' },
+    { id: '2', name: 'Bruno Gomes', avatar_url: 'https://i.pravatar.cc/150?u=2', role: 'Atendente', email: 'bruno.atendente@zapcrm.com', password: 'password' },
+    { id: '3', name: 'Carla Dias', avatar_url: 'https://i.pravatar.cc/150?u=3', role: 'Atendente', email: 'carla.atendente@zapcrm.com', password: 'password' },
 ];
 
 const crmContactsData: CrmContact[] = [
@@ -65,16 +69,21 @@ const App: React.FC = () => {
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [activeView, setActiveView] = useState('dashboard');
     const [users, setUsers] = useState<User[]>(usersData);
-    const [currentUser, setCurrentUser] = useState<User | null>(users[0] || null);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [chats, setChats] = useState<Chat[]>(initialChats);
     const [activeChatId, setActiveChatId] = useState<string | null>(initialChats[0]?.id || null);
     const [crmContacts, setCrmContacts] = useState<CrmContact[]>(crmContactsData);
     const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
     const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseItem[]>([]);
     const [whatsAppViewMode, setWhatsAppViewMode] = useState<'integrado' | 'classico'>('integrado');
+    const [channels, setChannels] = useState<Channel[]>([]);
     const [theme, setTheme] = useState<Theme>(() => {
         return (localStorage.getItem('theme') as Theme) || 'system';
     });
+
+    const handleLogout = () => {
+        setCurrentUser(null);
+    };
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -183,6 +192,62 @@ const App: React.FC = () => {
       fetchInitialData();
     }, []);
     
+    // Effect to handle bot responses to customer messages
+    useEffect(() => {
+        const processBotResponses = async () => {
+            const chatsToProcess = chats.filter(chat => {
+                if (chat.handled_by !== 'bot' || chat.messages.length === 0) {
+                    return false;
+                }
+                const lastMessage = chat.messages[chat.messages.length - 1];
+                // Respond only if the last message is from the contact (customer)
+                return lastMessage.sender === chat.contact_id;
+            });
+
+            if (chatsToProcess.length === 0) return;
+
+            for (const chat of chatsToProcess) {
+                const lastMessage = chat.messages[chat.messages.length - 1];
+                if (!lastMessage) continue;
+
+                // Determine if this is the first interaction for a proper greeting
+                const customerMessagesCount = chat.messages.filter(m => m.sender === chat.contact_id).length;
+                const isFirstInteraction = customerMessagesCount === 1;
+
+                const config = { tone: 'Amigável', knowledgeBase, isFirstInteraction };
+                const botResponse = await generateChatbotResponse(lastMessage.text, config);
+
+                const botMessage: Message = {
+                    id: `msg-${Date.now()}-${Math.random()}`,
+                    chat_id: chat.id,
+                    sender: 'bot',
+                    text: botResponse.response,
+                    avatar_url: '/bot.png',
+                    timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                    type: 'text'
+                };
+
+                setChats(currentChats => currentChats.map(c => {
+                    if (c.id === chat.id) {
+                        const updatedChat = {
+                            ...c,
+                            messages: [...c.messages, botMessage],
+                            last_message: botMessage.text,
+                            timestamp: botMessage.timestamp,
+                        };
+                        if (botResponse.requiresHandoff) {
+                            updatedChat.handled_by = '1'; // Assign to manager (Ana Silva) on handoff
+                        }
+                        return updatedChat;
+                    }
+                    return c;
+                }));
+            }
+        };
+
+        processBotResponses();
+    }, [chats, knowledgeBase]);
+
     const handleNavigateToChat = (contact: CrmContact) => {
         const existingChat = chats.find(chat => chat.contact_id === contact.id);
         if (existingChat) {
@@ -215,50 +280,22 @@ const App: React.FC = () => {
             timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         };
 
-        const updatedChats = chats.map(chat => {
+        setChats(currentChats => currentChats.map(chat => {
             if (chat.id === chatId) {
+                // If an agent sends a message in a bot-handled chat, they automatically take over.
+                const isBotHandled = chat.handled_by === 'bot';
                 return {
                     ...chat,
                     messages: [...chat.messages, newMessage],
                     last_message: newMessage.text,
                     timestamp: newMessage.timestamp,
+                    handled_by: isBotHandled ? currentUser.id : chat.handled_by,
                 };
             }
             return chat;
-        });
-        
-        setChats(updatedChats);
-        
-        const targetChat = updatedChats.find(c => c.id === chatId);
-        if (targetChat?.handled_by === 'bot') {
-            const customerMessagesCount = targetChat.messages.filter(m => m.sender === targetChat.contact_id).length;
-            const isFirstInteraction = customerMessagesCount === 0;
+        }));
 
-            const config = { tone: 'Amigável', knowledgeBase, isFirstInteraction };
-            const botResponse = await generateChatbotResponse(newMessage.text, config);
-            
-            const botMessage: Message = {
-                id: `msg-${Date.now() + 1}`,
-                chat_id: chatId,
-                sender: 'bot',
-                text: botResponse.response,
-                avatar_url: '/bot.png',
-                timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                type: 'text'
-            };
-            setChats(currentChats => currentChats.map(chat => {
-                if (chat.id === chatId) {
-                    const updatedChat = { ...chat, messages: [...chat.messages, botMessage], last_message: botMessage.text };
-                    if (botResponse.requiresHandoff) {
-                        updatedChat.handled_by = '1'; // Assign to manager (Ana Silva) on handoff
-                    }
-                    return updatedChat;
-                }
-                return chat;
-            }));
-        }
-
-    }, [chats, knowledgeBase, currentUser]);
+    }, [currentUser]);
     
     const handleTakeOverChat = (chatId: string) => {
         if (!currentUser) return;
@@ -280,6 +317,20 @@ const App: React.FC = () => {
             case 'dashboard':
                 return <Dashboard />;
             case 'whatsapp':
+                if (channels.length === 0) {
+                    return (
+                        <div className="flex flex-col items-center justify-center h-full text-center bg-background-main dark:bg-gray-800 rounded-2xl p-8">
+                            <WhatsAppIcon className="w-24 h-24 text-gray-300 dark:text-gray-600 mb-4" />
+                            <h2 className="text-xl font-semibold text-text-main dark:text-gray-200">Nenhum canal do WhatsApp conectado</h2>
+                            <p className="text-text-secondary dark:text-gray-400 mt-2 max-w-sm">Para começar a atender seus clientes, você precisa primeiro conectar um número do WhatsApp.</p>
+                            <button 
+                                onClick={() => setActiveView('channels')} 
+                                className="mt-6 px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                Conectar Canal Agora
+                            </button>
+                        </div>
+                    );
+                }
                 return whatsAppViewMode === 'integrado' ? (
                      <WhatsAppCrm 
                         currentUser={currentUser}
@@ -319,6 +370,8 @@ const App: React.FC = () => {
                 return <Reports users={users} chats={chats} />;
             case 'chatbot':
                 return <Chatbot knowledgeBase={knowledgeBase} setKnowledgeBase={setKnowledgeBase} />;
+            case 'channels':
+                return <Canais channels={channels} setChannels={setChannels} />;
             case 'team':
                 return <Team team={users} setTeam={setUsers} />;
             case 'logs':
@@ -338,11 +391,7 @@ const App: React.FC = () => {
     };
 
     if (!currentUser) {
-         return (
-            <div className="flex h-screen bg-background-main dark:bg-gray-900 text-text-main dark:text-gray-200 items-center justify-center">
-                <p>Nenhum usuário para carregar. Adicione um membro à equipe.</p>
-            </div>
-         );
+         return <Login users={users} onLoginSuccess={setCurrentUser} />;
     }
 
     return (
@@ -365,6 +414,7 @@ const App: React.FC = () => {
                     setWhatsAppViewMode={setWhatsAppViewMode}
                     theme={theme}
                     setTheme={setTheme}
+                    onLogout={handleLogout}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
                     {renderActiveView()}
