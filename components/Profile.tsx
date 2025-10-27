@@ -8,7 +8,7 @@ interface ProfileProps {
     setUsers: (users: User[]) => void;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ currentUser, setCurrentUser, users, setUsers }) => {
+const Profile: React.FC<ProfileProps> = ({ currentUser, setCurrentUser, users, setUsers }) => {
     const [profileName, setProfileName] = useState(currentUser.name);
     const [profileEmail, setProfileEmail] = useState(currentUser.email || '');
 
@@ -74,3 +74,5 @@ export const Profile: React.FC<ProfileProps> = ({ currentUser, setCurrentUser, u
         </div>
     );
 };
+
+export default Profile;

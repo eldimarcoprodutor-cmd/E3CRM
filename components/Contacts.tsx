@@ -185,7 +185,7 @@ const ContactDetailsModal: React.FC<{
     );
 };
 
-export const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser, onDeleteContact }) => {
+const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser, onDeleteContact }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
@@ -290,3 +290,5 @@ export const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, curre
         </div>
     );
 };
+
+export default Contacts;

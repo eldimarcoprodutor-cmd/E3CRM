@@ -23,7 +23,7 @@ interface LogsProps {
     users: User[];
 }
 
-export const Logs: React.FC<LogsProps> = ({ users }) => {
+const Logs: React.FC<LogsProps> = ({ users }) => {
     const [logs] = useState<LogEntry[]>(initialLogs);
     const [userFilter, setUserFilter] = useState<string>('');
     const [actionFilter, setActionFilter] = useState<string>('');
@@ -124,3 +124,5 @@ export const Logs: React.FC<LogsProps> = ({ users }) => {
         </div>
     );
 };
+
+export default Logs;

@@ -35,7 +35,7 @@ const allContacts: Contact[] = [
 ];
 
 
-export const Broadcast: React.FC = () => {
+const Broadcast: React.FC = () => {
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [message, setMessage] = useState('');
     const [history, setHistory] = useState<BroadcastHistoryItem[]>(initialHistory);
@@ -196,3 +196,5 @@ export const Broadcast: React.FC = () => {
         </div>
     );
 };
+
+export default Broadcast;

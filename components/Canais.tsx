@@ -11,7 +11,6 @@ const QRCodeModal: React.FC<{
     const [qrCodeUrl, setQrCodeUrl] = useState('');
 
     useEffect(() => {
-        // Fix: Use ReturnType<typeof setTimeout> for browser compatibility instead of NodeJS.Timeout.
         let qrTimer: ReturnType<typeof setTimeout>;
         let connectTimer: ReturnType<typeof setTimeout>;
 
@@ -81,7 +80,7 @@ interface CanaisProps {
     setChannels: React.Dispatch<React.SetStateAction<Channel[]>>;
 }
 
-export const Canais: React.FC<CanaisProps> = ({ channels, setChannels }) => {
+const Canais: React.FC<CanaisProps> = ({ channels, setChannels }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleConnect = () => {
@@ -150,3 +149,5 @@ export const Canais: React.FC<CanaisProps> = ({ channels, setChannels }) => {
         </div>
     );
 };
+
+export default Canais;

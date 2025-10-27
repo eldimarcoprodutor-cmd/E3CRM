@@ -127,7 +127,7 @@ interface ReportsProps {
     chats: Chat[];
 }
 
-export const Reports: React.FC<ReportsProps> = ({ users }) => {
+const Reports: React.FC<ReportsProps> = ({ users }) => {
     const today = new Date();
     const lastWeek = new Date(today);
     lastWeek.setDate(today.getDate() - 6);
@@ -248,3 +248,5 @@ export const Reports: React.FC<ReportsProps> = ({ users }) => {
         </div>
     );
 };
+
+export default Reports;

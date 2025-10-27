@@ -87,7 +87,7 @@ const TeamMemberModal: React.FC<{
     );
 };
 
-export const Team: React.FC<TeamProps> = ({ team, setTeam, currentUser }) => {
+const Team: React.FC<TeamProps> = ({ team, setTeam, currentUser }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState<User | null>(null);
 
@@ -179,3 +179,5 @@ export const Team: React.FC<TeamProps> = ({ team, setTeam, currentUser }) => {
         </div>
     );
 };
+
+export default Team;

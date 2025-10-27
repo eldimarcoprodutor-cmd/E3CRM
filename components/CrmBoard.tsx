@@ -317,7 +317,7 @@ const AddNoteModal: React.FC<{
 };
 
 
-export const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, currentUser, onNavigateToChat }) => {
+const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, currentUser, onNavigateToChat }) => {
     const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
     const [dragOverStage, setDragOverStage] = useState<CrmContact['pipeline_stage'] | null>(null);
     const [isAddOppModalOpen, setAddOppModalOpen] = useState(false);
@@ -439,3 +439,5 @@ export const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users
         </div>
     );
 };
+
+export default CrmBoard;

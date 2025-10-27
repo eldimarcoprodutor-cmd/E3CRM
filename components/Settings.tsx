@@ -82,7 +82,7 @@ interface SettingsProps {
     setQuickReplies: (qr: QuickReply[]) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplies }) => {
+const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplies }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingReply, setEditingReply] = useState<QuickReply | null>(null);
 
@@ -174,3 +174,5 @@ export const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplie
         </div>
     );
 };
+
+export default Settings;

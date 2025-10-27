@@ -12,18 +12,27 @@ export const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, curr
     if (message.type === 'internal') {
         const senderUser = users.find(u => u.id === message.sender);
         
-        // Function to parse and highlight mentions
         const renderTextWithMentions = (text: string) => {
-            const mentionRegex = /@(\w+(\s\w+)*)/g;
+            // Regex to find mentions like @John Doe, capturing the full mention.
+            const mentionRegex = /(@\w+(?:\s\w+)*)/g;
             const parts = text.split(mentionRegex);
             
             return parts.map((part, index) => {
-                // Check if the part is a username that exists in our user list
-                 const userExists = users.some(u => `@${u.name}` === part || u.name === part);
-                if (index % 3 === 1 && userExists) {
-                    return <strong key={index} className="text-primary dark:text-primary-light font-semibold rounded bg-primary-light dark:bg-primary/20 px-1">@{part}</strong>;
+                // `split` with a capturing group alternates between non-matches and matches.
+                // Matches will be at odd indices.
+                if (part.startsWith('@') && index % 2 === 1) {
+                    const mentionedName = part.substring(1); // Remove '@' prefix
+                    const userExists = users.some(u => u.name === mentionedName);
+
+                    if (userExists) {
+                        return (
+                            <strong key={index} className="text-primary dark:text-primary-light font-semibold rounded bg-primary-light dark:bg-primary/20 px-1">
+                                {part}
+                            </strong>
+                        );
+                    }
                 }
-                return part;
+                return part; // Return the part of the string (either non-mention or non-existing user mention)
             });
         };
 

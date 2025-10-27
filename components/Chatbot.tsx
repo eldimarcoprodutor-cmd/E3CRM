@@ -84,7 +84,7 @@ interface ChatbotProps {
     setKnowledgeBase: (kb: KnowledgeBaseItem[]) => void;
 }
 
-export const Chatbot: React.FC<ChatbotProps> = ({ knowledgeBase, setKnowledgeBase }) => {
+const Chatbot: React.FC<ChatbotProps> = ({ knowledgeBase, setKnowledgeBase }) => {
     const [tone, setTone] = useState('Amigável e prestativo');
     const [testInput, setTestInput] = useState('');
     const [testResponse, setTestResponse] = useState('');
@@ -223,3 +223,5 @@ export const Chatbot: React.FC<ChatbotProps> = ({ knowledgeBase, setKnowledgeBas
         </div>
     );
 };
+
+export default Chatbot;

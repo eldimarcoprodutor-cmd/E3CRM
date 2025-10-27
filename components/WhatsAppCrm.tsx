@@ -39,7 +39,7 @@ const ChatListItem: React.FC<{ chat: Chat; isActive: boolean; onClick: () => voi
     </button>
 );
 
-export const WhatsAppCrm: React.FC<WhatsAppCrmProps> = ({ currentUser, chats, setChats, onSendMessage, users, quickReplies, crmContacts, setCrmContacts, onTakeOverChat, activeChatId, setActiveChatId }) => {
+const WhatsAppCrm: React.FC<WhatsAppCrmProps> = ({ currentUser, chats, setChats, onSendMessage, users, quickReplies, crmContacts, setCrmContacts, onTakeOverChat, activeChatId, setActiveChatId }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleSelectChat = (chatId: string) => {
@@ -108,3 +108,5 @@ export const WhatsAppCrm: React.FC<WhatsAppCrmProps> = ({ currentUser, chats, se
         </div>
     );
 };
+
+export default WhatsAppCrm;

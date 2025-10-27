@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 const salesData = [
@@ -21,7 +22,7 @@ const MetricCard: React.FC<{ title: string; value: string; change: string; isPos
     </div>
 );
 
-export const Dashboard: React.FC = () => {
+const Dashboard: React.FC = () => {
   return (
     <div>
         <h1 className="text-3xl font-bold mb-6 text-text-main dark:text-white">Dashboard de Performance</h1>
@@ -66,3 +67,5 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
+
+export default Dashboard;

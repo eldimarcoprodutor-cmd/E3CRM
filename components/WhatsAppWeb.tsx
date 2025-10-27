@@ -38,7 +38,7 @@ const ChatListItem: React.FC<{ chat: Chat; isActive: boolean; onClick: () => voi
 );
 
 
-export const WhatsAppWeb: React.FC<WhatsAppWebProps> = ({ currentUser, chats, setChats, onSendMessage, users, quickReplies, onTakeOverChat, activeChatId, setActiveChatId }) => {
+const WhatsAppWeb: React.FC<WhatsAppWebProps> = ({ currentUser, chats, setChats, onSendMessage, users, quickReplies, onTakeOverChat, activeChatId, setActiveChatId }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleSelectChat = (chatId: string) => {
@@ -104,3 +104,5 @@ export const WhatsAppWeb: React.FC<WhatsAppWebProps> = ({ currentUser, chats, se
         </div>
     );
 };
+
+export default WhatsAppWeb;

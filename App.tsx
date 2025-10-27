@@ -1,26 +1,29 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
-import { Dashboard } from './components/Dashboard.tsx';
-import { CrmBoard } from './components/CrmBoard.tsx';
-import { WhatsAppWeb } from './components/WhatsAppWeb.tsx';
-import { Settings } from './components/Settings.tsx';
 import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel } from './types.ts';
-import { Scheduling } from './components/Scheduling.tsx';
-import { Broadcast } from './components/Broadcast.tsx';
-import { Reports } from './components/Reports.tsx';
-import { Chatbot } from './components/Chatbot.tsx';
-import { Contacts } from './components/Contacts.tsx';
-import { Team } from './components/Team.tsx';
-import { WhatsAppCrm } from './components/WhatsAppCrm.tsx';
-import { Logs } from './components/Logs.tsx';
 import { Login } from './components/Login.tsx';
-import { Canais } from './components/Canais.tsx';
-import { Profile } from './components/Profile.tsx';
 import { WhatsAppIcon } from './components/icons/WhatsAppIcon.tsx';
 import { generateChatbotResponse } from './services/geminiService.ts';
 import { supabase } from './services/supabase.ts';
+
+// Lazy load components for code splitting
+const Dashboard = lazy(() => import('./components/Dashboard.tsx'));
+const CrmBoard = lazy(() => import('./components/CrmBoard.tsx'));
+const WhatsAppWeb = lazy(() => import('./components/WhatsAppWeb.tsx'));
+const Settings = lazy(() => import('./components/Settings.tsx'));
+const Scheduling = lazy(() => import('./components/Scheduling.tsx'));
+const Broadcast = lazy(() => import('./components/Broadcast.tsx'));
+const Reports = lazy(() => import('./components/Reports.tsx'));
+const Chatbot = lazy(() => import('./components/Chatbot.tsx'));
+const Contacts = lazy(() => import('./components/Contacts.tsx'));
+const Team = lazy(() => import('./components/Team.tsx'));
+const WhatsAppCrm = lazy(() => import('./components/WhatsAppCrm.tsx'));
+const Logs = lazy(() => import('./components/Logs.tsx'));
+const Canais = lazy(() => import('./components/Canais.tsx'));
+const Profile = lazy(() => import('./components/Profile.tsx'));
 
 // Mock Data
 const usersData: User[] = [
@@ -460,7 +463,9 @@ const App: React.FC = () => {
                     onLogout={handleLogout}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-                    {renderActiveView()}
+                    <Suspense fallback={<div className="flex items-center justify-center h-full text-text-secondary">Carregando visualização...</div>}>
+                        {renderActiveView()}
+                    </Suspense>
                 </main>
             </div>
         </div>

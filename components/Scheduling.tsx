@@ -138,7 +138,7 @@ const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({ isOpen, onC
     );
 };
 
-export const Scheduling: React.FC<SchedulingProps> = ({ contacts }) => {
+const Scheduling: React.FC<SchedulingProps> = ({ contacts }) => {
     const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>(initialScheduledMessages);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMessage, setEditingMessage] = useState<ScheduledMessage | null>(null);
@@ -220,3 +220,5 @@ export const Scheduling: React.FC<SchedulingProps> = ({ contacts }) => {
         </div>
     );
 };
+
+export default Scheduling;
