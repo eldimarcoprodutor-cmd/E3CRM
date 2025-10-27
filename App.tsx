@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
@@ -17,6 +17,7 @@ import { WhatsAppCrm } from './components/WhatsAppCrm.tsx';
 import { Logs } from './components/Logs.tsx';
 import { Login } from './components/Login.tsx';
 import { Canais } from './components/Canais.tsx';
+import { Profile } from './components/Profile.tsx';
 import { WhatsAppIcon } from './components/icons/WhatsAppIcon.tsx';
 import { generateChatbotResponse } from './services/geminiService.ts';
 import { supabase } from './services/supabase.ts';
@@ -44,7 +45,7 @@ const initialChats: Chat[] = [
         last_message: 'Olá! Tenho uma dúvida sobre a fatura.',
         timestamp: '10:30',
         unread_count: 2,
-        handled_by: 'bot',
+        handled_by: '2', // Handled by Bruno
         messages: [
             { id: 'msg1-1', chat_id: 'chat1', sender: '102', text: 'Olá! Tenho uma dúvida sobre a fatura.', avatar_url: 'https://i.pravatar.cc/150?u=102', timestamp: '10:30', type: 'text' },
         ],
@@ -71,7 +72,7 @@ const App: React.FC = () => {
     const [users, setUsers] = useState<User[]>(usersData);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [chats, setChats] = useState<Chat[]>(initialChats);
-    const [activeChatId, setActiveChatId] = useState<string | null>(initialChats[0]?.id || null);
+    const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [crmContacts, setCrmContacts] = useState<CrmContact[]>(crmContactsData);
     const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
     const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseItem[]>([]);
@@ -83,7 +84,26 @@ const App: React.FC = () => {
 
     const handleLogout = () => {
         setCurrentUser(null);
+        setActiveView('dashboard');
     };
+    
+    // Data segregation based on user role
+    const visibleCrmContacts = useMemo(() => {
+        if (!currentUser) return [];
+        if (currentUser.role === 'Gerente') {
+            return crmContacts;
+        }
+        return crmContacts.filter(c => c.owner_id === currentUser.id);
+    }, [crmContacts, currentUser]);
+
+    const visibleChats = useMemo(() => {
+        if (!currentUser) return [];
+        if (currentUser.role === 'Gerente') {
+            return chats;
+        }
+        // Atendentes see chats assigned to them OR handled by the bot
+        return chats.filter(c => c.handled_by === currentUser.id || c.handled_by === 'bot');
+    }, [chats, currentUser]);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -115,6 +135,13 @@ const App: React.FC = () => {
             setCurrentUser(users[0] || null);
         }
     }, [users, currentUser]);
+    
+     // Reset active chat if it's no longer visible after user switch
+    useEffect(() => {
+        if (activeChatId && !visibleChats.find(c => c.id === activeChatId)) {
+            setActiveChatId(null);
+        }
+    }, [visibleChats, activeChatId]);
 
 
     // Simulate receiving a message from a new contact to demonstrate auto-creation
@@ -179,7 +206,7 @@ const App: React.FC = () => {
         if (newContactsToCreate.length > 0) {
             setCrmContacts(currentContacts => [...currentContacts, ...newContactsToCreate]);
         }
-    }, [chats, crmContacts]); // Re-run when chats list changes
+    }, [chats]); // Re-run when chats list changes
 
 
     useEffect(() => {
@@ -245,7 +272,8 @@ const App: React.FC = () => {
             }
         };
 
-        processBotResponses();
+        const responseTimer = setTimeout(processBotResponses, 2000); // Add a small delay
+        return () => clearTimeout(responseTimer);
     }, [chats, knowledgeBase]);
 
     const handleNavigateToChat = (contact: CrmContact) => {
@@ -262,7 +290,7 @@ const App: React.FC = () => {
                 timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                 unread_count: 0,
                 messages: [],
-                handled_by: 'bot',
+                handled_by: currentUser?.id || 'bot', // Assign to current user
             };
             setChats(currentChats => [newChat, ...currentChats]);
             setActiveChatId(newChat.id);
@@ -303,6 +331,18 @@ const App: React.FC = () => {
             chat.id === chatId ? { ...chat, handled_by: currentUser.id } : chat
         ));
     };
+    
+    const handleDeleteContact = (contactId: string) => {
+        if (currentUser?.role !== 'Gerente') {
+            alert('Apenas gerentes podem remover contatos.');
+            return;
+        }
+        if (window.confirm("Tem certeza que deseja remover este contato e todas as suas informações?")) {
+            setCrmContacts(prev => prev.filter(c => c.id !== contactId));
+            // Optional: also remove associated chats
+            setChats(prev => prev.filter(c => c.contact_id !== contactId));
+        }
+    };
 
 
     const renderActiveView = () => {
@@ -334,12 +374,12 @@ const App: React.FC = () => {
                 return whatsAppViewMode === 'integrado' ? (
                      <WhatsAppCrm 
                         currentUser={currentUser}
-                        chats={chats}
+                        chats={visibleChats}
                         setChats={setChats}
                         onSendMessage={handleSendMessage}
                         users={users}
                         quickReplies={quickReplies}
-                        crmContacts={crmContacts}
+                        crmContacts={visibleCrmContacts}
                         setCrmContacts={setCrmContacts}
                         onTakeOverChat={handleTakeOverChat}
                         activeChatId={activeChatId}
@@ -348,7 +388,7 @@ const App: React.FC = () => {
                 ) : (
                     <WhatsAppWeb 
                         currentUser={currentUser}
-                        chats={chats}
+                        chats={visibleChats}
                         setChats={setChats}
                         onSendMessage={handleSendMessage}
                         users={users}
@@ -359,9 +399,9 @@ const App: React.FC = () => {
                     />
                 );
             case 'crm-board':
-                return <CrmBoard contacts={crmContacts} setContacts={setCrmContacts} users={users} currentUser={currentUser} onNavigateToChat={handleNavigateToChat} />;
+                return <CrmBoard contacts={visibleCrmContacts} setContacts={setCrmContacts} users={users} currentUser={currentUser} onNavigateToChat={handleNavigateToChat} />;
             case 'contacts':
-                return <Contacts contacts={crmContacts} setContacts={setCrmContacts} />;
+                return <Contacts contacts={visibleCrmContacts} setContacts={setCrmContacts} currentUser={currentUser} onDeleteContact={handleDeleteContact} />;
             case 'scheduling':
                 return <Scheduling contacts={crmContacts} />;
             case 'broadcast':
@@ -373,15 +413,18 @@ const App: React.FC = () => {
             case 'channels':
                 return <Canais channels={channels} setChannels={setChannels} />;
             case 'team':
-                return <Team team={users} setTeam={setUsers} />;
+                return <Team team={users} setTeam={setUsers} currentUser={currentUser} />;
             case 'logs':
                 return <Logs users={users} />;
-            case 'settings':
-                return <Settings 
+            case 'profile':
+                return <Profile 
                             currentUser={currentUser}
                             setCurrentUser={setCurrentUser}
                             users={users}
                             setUsers={setUsers}
+                        />;
+            case 'settings':
+                return <Settings 
                             quickReplies={quickReplies} 
                             setQuickReplies={setQuickReplies} 
                         />;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { QuickReply, User } from '../types.ts';
+import type { QuickReply } from '../types.ts';
 import { supabase } from '../services/supabase.ts';
 
 // Modal for adding/editing quick replies
@@ -78,39 +78,13 @@ const QuickReplyModal: React.FC<{
 };
 
 interface SettingsProps {
-    currentUser: User;
-    setCurrentUser: (user: User) => void;
-    users: User[];
-    setUsers: (users: User[]) => void;
     quickReplies: QuickReply[];
     setQuickReplies: (qr: QuickReply[]) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ currentUser, setCurrentUser, users, setUsers, quickReplies, setQuickReplies }) => {
-    const [profileName, setProfileName] = useState(currentUser.name);
-    const [profileEmail, setProfileEmail] = useState(currentUser.email || '');
+export const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplies }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingReply, setEditingReply] = useState<QuickReply | null>(null);
-
-    // Update form if currentUser changes
-    useEffect(() => {
-        setProfileName(currentUser.name);
-        setProfileEmail(currentUser.email || '');
-    }, [currentUser]);
-    
-    const handleProfileSave = (e: React.FormEvent) => {
-        e.preventDefault();
-        const updatedUser = { ...currentUser, name: profileName, email: profileEmail };
-        
-        // Update the master list of users
-        const updatedUsers = users.map(u => u.id === currentUser.id ? updatedUser : u);
-        setUsers(updatedUsers);
-        
-        // Update the current user state
-        setCurrentUser(updatedUser);
-        
-        alert('Perfil salvo com sucesso!');
-    };
 
     const handleOpenModal = (reply: QuickReply | null) => {
         setEditingReply(reply);
@@ -151,52 +125,9 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, setCurrentUser,
 
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-6 text-text-main dark:text-white">Configurações</h1>
+            <h1 className="text-3xl font-bold mb-6 text-text-main dark:text-white">Configurações Gerais</h1>
 
             <div className="max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Profile & Notifications */}
-                <div className="space-y-8">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
-                        <h2 className="text-xl font-semibold mb-4 text-text-main dark:text-white">Perfil</h2>
-                        <form onSubmit={handleProfileSave} className="space-y-4">
-                            <div>
-                                <label htmlFor="name" className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Nome</label>
-                                <input
-                                    type="text"
-                                    id="name"
-                                    value={profileName}
-                                    onChange={e => setProfileName(e.target.value)}
-                                    className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-border-neutral dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Email</label>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    value={profileEmail}
-                                    onChange={e => setProfileEmail(e.target.value)}
-                                    className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-border-neutral dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
-                            </div>
-                            <div className="pt-2">
-                                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark">Salvar Alterações</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
-                        <h2 className="text-xl font-semibold mb-4 text-text-main dark:text-white">Notificações</h2>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-text-secondary dark:text-gray-300">Notificações no desktop</span>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" defaultChecked className="sr-only peer" />
-                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/50 dark:peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Quick Replies */}
                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
                     <div className="flex justify-between items-center mb-4">
@@ -219,6 +150,18 @@ export const Settings: React.FC<SettingsProps> = ({ currentUser, setCurrentUser,
                             </div>
                         ))}
                      </div>
+                </div>
+
+                {/* Notifications */}
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg h-fit">
+                    <h2 className="text-xl font-semibold mb-4 text-text-main dark:text-white">Notificações</h2>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-text-secondary dark:text-gray-300">Notificações no desktop</span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" defaultChecked className="sr-only peer" />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/50 dark:peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
                 </div>
             </div>
 

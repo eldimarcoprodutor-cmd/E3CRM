@@ -3,7 +3,7 @@ import type { CrmContact, User, Note } from '../types.ts';
 
 interface CrmBoardProps {
     contacts: CrmContact[];
-    setContacts: (contacts: CrmContact[]) => void;
+    setContacts: (updater: (contacts: CrmContact[]) => CrmContact[]) => void;
     users: User[];
     currentUser: User;
     onNavigateToChat: (contact: CrmContact) => void;
@@ -343,17 +343,25 @@ export const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users
     
     const handleDrop = (e: React.DragEvent<HTMLDivElement>, stage: CrmContact['pipeline_stage']) => {
         e.preventDefault();
-        if (draggedItemId) {
-            const updatedContacts = contacts.map(contact => 
-                contact.id === draggedItemId ? { ...contact, pipeline_stage: stage, last_interaction: new Date().toISOString().split('T')[0] } : contact
-            );
-            setContacts(updatedContacts);
-        }
         setDragOverStage(null);
+
+        if (currentUser.role === 'Atendente' && (stage === 'Fechado' || stage === 'Perdido')) {
+            alert('Apenas gerentes podem mover contatos para "Fechado" ou "Perdido".');
+            setDraggedItemId(null);
+            return;
+        }
+
+        if (draggedItemId) {
+            setContacts(currentContacts => 
+                currentContacts.map(contact => 
+                    contact.id === draggedItemId ? { ...contact, pipeline_stage: stage, last_interaction: new Date().toISOString().split('T')[0] } : contact
+                )
+            );
+        }
     };
 
     const handleAddContact = (newContact: CrmContact) => {
-        setContacts([newContact, ...contacts]);
+        setContacts(currentContacts => [newContact, ...currentContacts]);
     };
 
     const handleSaveNote = (noteText: string) => {
@@ -366,7 +374,7 @@ export const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users
             timestamp: new Date().toISOString(),
         };
 
-        const updatedContacts = contacts.map(contact => {
+        setContacts(currentContacts => currentContacts.map(contact => {
             if (contact.id === noteModalTarget.id) {
                 return {
                     ...contact,
@@ -374,9 +382,7 @@ export const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users
                 };
             }
             return contact;
-        });
-
-        setContacts(updatedContacts);
+        }));
         setNoteModalTarget(null); // Close modal
     };
 
@@ -384,12 +390,14 @@ export const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users
         <div>
             <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
                 <h1 className="text-3xl font-bold text-text-main dark:text-white">Funil CRM</h1>
-                <button 
-                    onClick={() => setAddOppModalOpen(true)}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                >
-                    Adicionar Oportunidade
-                </button>
+                {currentUser.role === 'Gerente' && (
+                    <button 
+                        onClick={() => setAddOppModalOpen(true)}
+                        className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    >
+                        Adicionar Oportunidade
+                    </button>
+                )}
             </div>
             <div className="flex space-x-6 overflow-x-auto pb-4">
                 {pipelineStages.map(stage => {

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import type { CrmContact } from '../types.ts';
+import type { CrmContact, User } from '../types.ts';
 
 interface ContactsProps {
     contacts: CrmContact[];
     setContacts: React.Dispatch<React.SetStateAction<CrmContact[]>>;
+    currentUser: User;
+    onDeleteContact: (contactId: string) => void;
 }
 
 // Modal for adding a new contact
@@ -66,7 +68,9 @@ const ContactDetailsModal: React.FC<{
     onClose: () => void;
     contact: CrmContact | null;
     onSave: (updatedContact: CrmContact) => void;
-}> = ({ isOpen, onClose, contact, onSave }) => {
+    currentUser: User;
+    onDelete: (contactId: string) => void;
+}> = ({ isOpen, onClose, contact, onSave, currentUser, onDelete }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<CrmContact | null>(contact);
 
@@ -95,6 +99,13 @@ const ContactDetailsModal: React.FC<{
         onClose();
     };
     
+    const handleDeleteClick = () => {
+        if (formData) {
+            onDelete(formData.id);
+            onClose();
+        }
+    };
+
     const handleClose = () => {
       setIsEditing(false);
       onClose();
@@ -147,25 +158,34 @@ const ContactDetailsModal: React.FC<{
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 mt-4 border-t dark:border-gray-700">
-                    {isEditing ? (
-                        <>
-                            <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg">Cancelar Edição</button>
-                            <button onClick={handleSave} className="px-4 py-2 text-white bg-primary rounded-lg">Salvar Alterações</button>
-                        </>
-                    ) : (
-                        <>
-                            <button onClick={handleClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg">Fechar</button>
-                            <button onClick={() => setIsEditing(true)} className="px-4 py-2 text-white bg-primary rounded-lg">Editar</button>
-                        </>
-                    )}
+                <div className="flex justify-between items-center pt-4 mt-4 border-t dark:border-gray-700">
+                     <div>
+                        {currentUser.role === 'Gerente' && !isEditing && (
+                            <button onClick={handleDeleteClick} className="px-4 py-2 text-sm font-medium text-status-error bg-status-error/10 rounded-lg hover:bg-status-error/20">
+                                Remover Contato
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        {isEditing ? (
+                            <>
+                                <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg">Cancelar</button>
+                                <button onClick={handleSave} className="px-4 py-2 text-white bg-primary rounded-lg">Salvar</button>
+                            </>
+                        ) : (
+                            <>
+                                <button onClick={handleClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg">Fechar</button>
+                                <button onClick={() => setIsEditing(true)} className="px-4 py-2 text-white bg-primary rounded-lg">Editar</button>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-export const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts }) => {
+export const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser, onDeleteContact }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
@@ -264,6 +284,8 @@ export const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts }) => 
                 onClose={handleCloseDetails}
                 contact={selectedContact}
                 onSave={handleSaveContact}
+                currentUser={currentUser}
+                onDelete={onDeleteContact}
             />
         </div>
     );

@@ -4,6 +4,7 @@ import type { User } from '../types.ts';
 interface TeamProps {
     team: User[];
     setTeam: (team: User[]) => void;
+    currentUser: User;
 }
 
 const TeamMemberModal: React.FC<{
@@ -86,7 +87,7 @@ const TeamMemberModal: React.FC<{
     );
 };
 
-export const Team: React.FC<TeamProps> = ({ team, setTeam }) => {
+export const Team: React.FC<TeamProps> = ({ team, setTeam, currentUser }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState<User | null>(null);
 
@@ -114,6 +115,10 @@ export const Team: React.FC<TeamProps> = ({ team, setTeam }) => {
     };
 
     const handleRemove = (userId: string) => {
+        if (userId === currentUser.id) {
+            alert("Você не pode remover a si mesmo.");
+            return;
+        }
         if (window.confirm("Tem certeza que deseja remover este membro da equipe?")) {
             setTeam(team.filter(member => member.id !== userId));
         }

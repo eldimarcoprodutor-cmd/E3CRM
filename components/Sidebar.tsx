@@ -11,6 +11,7 @@ import { ContactsIcon } from './icons/ContactsIcon.tsx';
 import { TeamIcon } from './icons/TeamIcon.tsx';
 import { LogsIcon } from './icons/LogsIcon.tsx';
 import { ChannelsIcon } from './icons/ChannelsIcon.tsx';
+import { UserIcon } from './icons/UserIcon.tsx';
 import type { User } from '../types.ts';
 
 interface SidebarProps {
@@ -53,6 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, activeView, set
         { id: 'channels', label: 'Canais', icon: <ChannelsIcon className="w-6 h-6" />, roles: ['Gerente'] },
         { id: 'team', label: 'Equipe', icon: <TeamIcon className="w-6 h-6" />, roles: ['Gerente'] },
         { id: 'logs', label: 'Logs', icon: <LogsIcon className="w-6 h-6" />, roles: ['Gerente'] },
+        { id: 'profile', label: 'Meu Perfil', icon: <UserIcon className="w-6 h-6" />, roles: ['Gerente', 'Atendente'] },
         { id: 'settings', label: 'Configurações', icon: <SettingsIcon className="w-6 h-6" />, roles: ['Gerente'] },
     ];
     
