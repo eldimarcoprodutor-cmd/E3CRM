@@ -52,7 +52,8 @@ export interface Activity {
   metadata?: {
     from?: string;
     to?: string;
-  }
+  };
+  contact_id?: string; // Foreign key for Supabase
 }
 
 export interface CrmContact {

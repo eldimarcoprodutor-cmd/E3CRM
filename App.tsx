@@ -22,66 +22,6 @@ const Canais = lazy(() => import('./components/Canais.tsx'));
 const Profile = lazy(() => import('./components/Profile.tsx'));
 const EmailComposerModal = lazy(() => import('./components/EmailComposerModal.tsx'));
 
-// Mock Data
-const usersData: User[] = [
-    { id: '1', name: 'Ana Silva', avatar_url: 'https://i.pravatar.cc/150?u=1', role: 'Gerente', email: 'ana.gerente@zapcrm.com', password: 'password' },
-    { id: '2', name: 'Bruno Gomes', avatar_url: 'https://i.pravatar.cc/150?u=2', role: 'Atendente', email: 'bruno.atendente@zapcrm.com', password: 'password' },
-    { id: '3', name: 'Carla Dias', avatar_url: 'https://i.pravatar.cc/150?u=3', role: 'Atendente', email: 'carla.atendente@zapcrm.com', password: 'password' },
-    { id: '4', name: 'Daniel Martins', avatar_url: 'https://i.pravatar.cc/150?u=4', role: 'Atendente', email: 'daniel.atendente@zapcrm.com', password: 'password' },
-    { id: '5', name: 'Fernanda Lima', avatar_url: 'https://i.pravatar.cc/150?u=5', role: 'Gerente', email: 'fernanda.gerente@zapcrm.com', password: 'password' },
-];
-
-const crmContactsData: CrmContact[] = [
-    { id: '101', name: 'Carlos Pereira', email: 'carlos.p@example.com', phone: '+55 11 98765-4321', avatar_url: 'https://i.pravatar.cc/150?u=101', tags: ['cliente-vip', 'e-commerce'], pipeline_stage: 'Fechado', last_interaction: '2024-07-20', owner_id: '2', value: 1500, temperature: 'Quente', next_action_date: '2024-07-25', lead_source: 'Indicação', activities: [] },
-    { id: '102', name: 'Mariana Costa', email: 'mari.costa@example.com', phone: '+55 21 91234-5678', avatar_url: 'https://i.pravatar.cc/150?u=102', tags: ['e-commerce', 'newsletter'], pipeline_stage: 'Proposta', last_interaction: '2024-07-22', owner_id: '2', value: 3200, temperature: 'Morno', next_action_date: '2024-07-28', lead_source: 'Website', activities: [] },
-    { id: '103', name: 'Tech Solutions Inc.', email: 'contato@techsolutions.com', phone: '+55 11 5555-1010', avatar_url: 'https://i.pravatar.cc/150?u=103', tags: ['B2B', 'parceria'], pipeline_stage: 'Qualificação', last_interaction: '2024-07-21', owner_id: '3', value: 12500, temperature: 'Quente', next_action_date: '2024-07-20', lead_source: 'Evento', activities: [] },
-    { id: '104', name: 'João Almeida', email: 'joao.a@example.net', phone: '+55 81 99999-8888', avatar_url: 'https://i.pravatar.cc/150?u=104', tags: ['lead-frio'], pipeline_stage: 'Contato', last_interaction: '2024-07-15', owner_id: '4', value: 500, temperature: 'Frio', next_action_date: '2024-08-01', lead_source: 'Anúncio Facebook', activities: [] },
-    { id: '105', name: 'Global Corp', email: 'financeiro@globalcorp.com', phone: '+55 41 3333-4444', avatar_url: 'https://i.pravatar.cc/150?u=105', tags: ['B2B', 'contrato-assinado'], pipeline_stage: 'Fechado', last_interaction: '2024-07-18', owner_id: '5', value: 50000, temperature: 'Quente', next_action_date: '2024-07-25', lead_source: 'Website', activities: [] },
-    { id: '106', name: 'Padaria Pão Quente', email: 'paoquente@email.com', phone: '+55 71 98888-7777', avatar_url: 'https://i.pravatar.cc/150?u=106', tags: ['pequeno-negocio'], pipeline_stage: 'Proposta', last_interaction: '2024-07-23', owner_id: '4', value: 800, temperature: 'Morno', next_action_date: '2024-07-30', lead_source: 'Indicação', activities: [] },
-];
-
-const initialChats: Chat[] = [
-    {
-        id: 'chat1',
-        contact_id: '102',
-        contact_name: 'Mariana Costa',
-        avatar_url: 'https://i.pravatar.cc/150?u=102',
-        last_message: 'Olá! Tenho uma dúvida sobre a fatura.',
-        timestamp: '10:30',
-        unread_count: 2,
-        handled_by: '2', // Handled by Bruno
-        messages: [
-            { id: 'msg1-1', chat_id: 'chat1', sender: '102', text: 'Olá! Tenho uma dúvida sobre a fatura.', avatar_url: 'https://i.pravatar.cc/150?u=102', timestamp: '10:30', type: 'text' },
-        ],
-    },
-    {
-        id: 'chat2',
-        contact_id: '104',
-        contact_name: 'João Almeida',
-        avatar_url: 'https://i.pravatar.cc/150?u=104',
-        last_message: 'Quais são os planos disponíveis?',
-        timestamp: '09:15',
-        unread_count: 0,
-        handled_by: 'bot',
-        messages: [
-            { id: 'msg2-1', chat_id: 'chat2', sender: '104', text: 'Quais são os planos disponíveis?', avatar_url: 'https://i.pravatar.cc/150?u=104', timestamp: '09:15', type: 'text' },
-            { id: 'msg2-2', chat_id: 'chat2', sender: 'bot', text: 'Olá, João! Temos os planos Básico, Profissional e Enterprise. Qual deles te interessa mais?', avatar_url: '/bot.png', timestamp: '09:16', type: 'text' },
-        ],
-    },
-     {
-        id: 'chat3',
-        contact_id: '106',
-        contact_name: 'Padaria Pão Quente',
-        avatar_url: 'https://i.pravatar.cc/150?u=106',
-        last_message: 'Gostaria de saber mais sobre o plano para pequenos negócios.',
-        timestamp: '11:45',
-        unread_count: 1,
-        handled_by: '4', // Handled by Daniel
-        messages: [
-            { id: 'msg3-1', chat_id: 'chat3', sender: '106', text: 'Gostaria de saber mais sobre o plano para pequenos negócios.', avatar_url: 'https://i.pravatar.cc/150?u=106', timestamp: '11:45', type: 'text' },
-        ],
-    },
-];
 
 const LoadingIndicator: React.FC<{ message: string }> = ({ message }) => (
     <div className="flex items-center justify-center h-full text-text-secondary dark:text-gray-400">
@@ -94,13 +34,14 @@ const LoadingIndicator: React.FC<{ message: string }> = ({ message }) => (
 );
 
 const App: React.FC = () => {
+    const [isLoading, setIsLoading] = useState(true);
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [activeView, setActiveView] = useState('dashboard');
-    const [users, setUsers] = useState<User[]>(usersData);
+    const [users, setUsers] = useState<User[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [chats, setChats] = useState<Chat[]>(initialChats);
+    const [chats, setChats] = useState<Chat[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
-    const [crmContacts, setCrmContacts] = useState<CrmContact[]>(crmContactsData);
+    const [crmContacts, setCrmContacts] = useState<CrmContact[]>([]);
     const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
     const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseItem[]>([]);
     const [whatsAppViewMode, setWhatsAppViewMode] = useState<'integrado' | 'classico'>('integrado');
@@ -115,23 +56,39 @@ const App: React.FC = () => {
         setActiveView('dashboard');
     };
     
-    const handleSignUp = (name: string, email: string, password: string): { success: boolean, error?: string } => {
-        const userExists = users.some(u => u.email.toLowerCase() === email.toLowerCase());
-        if (userExists) {
+    const handleSignUp = async (name: string, email: string, password: string): Promise<{ success: boolean, error?: string }> => {
+        const { supabase } = await import('./services/supabase.ts');
+        
+        const { data: existingUsers, error: checkError } = await supabase
+            .from('users')
+            .select('email')
+            .eq('email', email.toLowerCase());
+
+        if (checkError) return { success: false, error: 'Erro ao verificar o email.' };
+        if (existingUsers && existingUsers.length > 0) {
             return { success: false, error: 'Este email já está em uso.' };
         }
     
-        const newUser: User = {
-            id: `user-${Date.now()}`,
+        const newUser: Omit<User, 'id'> = {
             name,
-            email,
-            password,
-            role: 'Atendente', // New users are always agents by default
+            email: email.toLowerCase(),
+            password, // In a real app, this should be hashed.
+            role: 'Atendente',
             avatar_url: `https://i.pravatar.cc/150?u=${Date.now()}`,
         };
+        
+        const { data: insertedUser, error: insertError } = await supabase
+            .from('users')
+            .insert(newUser)
+            .select()
+            .single();
+
+        if (insertError || !insertedUser) {
+            return { success: false, error: 'Não foi possível criar a conta.' };
+        }
     
-        setUsers(prevUsers => [...prevUsers, newUser]);
-        setCurrentUser(newUser); // Automatically log in the new user
+        setUsers(prevUsers => [...prevUsers, insertedUser]);
+        setCurrentUser(insertedUser); // Automatically log in the new user
         return { success: true };
     };
 
@@ -149,7 +106,6 @@ const App: React.FC = () => {
         if (currentUser.role === 'Gerente') {
             return chats;
         }
-        // Atendentes see chats assigned to them OR handled by the bot
         return chats.filter(c => c.handled_by === currentUser.id || c.handled_by === 'bot');
     }, [chats, currentUser]);
 
@@ -177,161 +133,54 @@ const App: React.FC = () => {
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, [theme]);
     
-    // Effect to handle if the current user is deleted from the team
     useEffect(() => {
         if (currentUser && !users.find(u => u.id === currentUser.id)) {
             setCurrentUser(users[0] || null);
         }
     }, [users, currentUser]);
     
-     // Reset active chat if it's no longer visible after user switch
     useEffect(() => {
         if (activeChatId && !visibleChats.find(c => c.id === activeChatId)) {
             setActiveChatId(null);
         }
     }, [visibleChats, activeChatId]);
 
-
-    // Simulate receiving a message from a new contact to demonstrate auto-creation
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setChats(currentChats => {
-                const newContactId = `+55 11 91234-9999`;
-                const existingChat = currentChats.find(c => c.contact_id === newContactId);
-                
-                if (existingChat) {
-                    return currentChats; // Already exists, do nothing
-                }
-                
-                const newChat: Chat = {
-                    id: `chat-${newContactId}`,
-                    contact_id: newContactId,
-                    contact_name: 'Novo Lead',
-                    avatar_url: `https://i.pravatar.cc/150?u=${newContactId}`,
-                    last_message: 'Olá, gostaria de um orçamento.',
-                    timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                    unread_count: 1,
-                    messages: [
-                        { id: `msg-${Date.now()}`, chat_id: `chat-${newContactId}`, sender: newContactId, text: 'Olá, gostaria de um orçamento.', avatar_url: `https://i.pravatar.cc/150?u=${newContactId}`, timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), type: 'text' },
-                    ],
-                    handled_by: 'bot',
-                };
-                return [newChat, ...currentChats];
-            });
-        }, 5000); // Simulate after 5 seconds
-    
-        return () => clearTimeout(timer);
-    }, []); // Run only once on mount
-
-    // Effect to automatically create CRM contacts from new chats
-    useEffect(() => {
-        const existingContactIds = new Set(crmContacts.map(c => c.id));
-        const newContactsToCreate: CrmContact[] = [];
-
-        chats.forEach(chat => {
-            if (!existingContactIds.has(chat.contact_id)) {
-                const newContact: CrmContact = {
-                    id: chat.contact_id,
-                    name: chat.contact_name,
-                    phone: chat.contact_id, // Assuming contact_id is the phone number for new leads
-                    email: '', // Default empty email
-                    avatar_url: chat.avatar_url,
-                    pipeline_stage: 'Contato', // Default to the first stage
-                    owner_id: '1', // Default owner: Manager
-                    tags: ['novo-contato'],
-                    last_interaction: new Date().toISOString().split('T')[0],
-                    value: 0,
-                    temperature: 'Morno',
-                    next_action_date: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString().split('T')[0], // Follow up in 3 days
-                    lead_source: 'WhatsApp',
-                    activities: [],
-                };
-                newContactsToCreate.push(newContact);
-                existingContactIds.add(chat.contact_id); // Avoid duplicates in the same run
-            }
-        });
-
-        if (newContactsToCreate.length > 0) {
-            setCrmContacts(currentContacts => [...currentContacts, ...newContactsToCreate]);
-        }
-    }, [chats, crmContacts]); // Re-run when chats list changes
-
-
+    // Main data fetching effect
     useEffect(() => {
       const fetchInitialData = async () => {
+        setIsLoading(true);
         const { supabase } = await import('./services/supabase.ts');
-        const { data: qrData } = await supabase.from('quick_replies').select('*');
+        
+        const [
+            { data: usersData },
+            { data: contactsData },
+            { data: chatsData },
+            { data: qrData },
+            { data: kbData }
+        ] = await Promise.all([
+             supabase.from('users').select('*'),
+             supabase.from('crm_contacts').select('*, activities(*)'),
+             supabase.from('chats').select('*, messages(*)'),
+             supabase.from('quick_replies').select('*'),
+             supabase.from('knowledge_base').select('*')
+        ]);
+
+        setUsers(usersData || []);
+        setCrmContacts(contactsData || []);
+        setChats(chatsData || []);
         setQuickReplies(qrData || []);
-        const { data: kbData } = await supabase.from('knowledge_base').select('*');
         setKnowledgeBase(kbData || []);
+        setIsLoading(false);
       };
       fetchInitialData();
     }, []);
-    
-    // Effect to handle bot responses to customer messages
-    useEffect(() => {
-        const processBotResponses = async () => {
-            const chatsToProcess = chats.filter(chat => {
-                if (chat.handled_by !== 'bot' || chat.messages.length === 0) {
-                    return false;
-                }
-                const lastMessage = chat.messages[chat.messages.length - 1];
-                // Respond only if the last message is from the contact (customer)
-                return lastMessage.sender === chat.contact_id;
-            });
-
-            if (chatsToProcess.length === 0) return;
-            
-            const { generateChatbotResponse } = await import('./services/geminiService.ts');
-
-            for (const chat of chatsToProcess) {
-                const lastMessage = chat.messages[chat.messages.length - 1];
-                if (!lastMessage) continue;
-
-                // Determine if this is the first interaction for a proper greeting
-                const customerMessagesCount = chat.messages.filter(m => m.sender === chat.contact_id).length;
-                const isFirstInteraction = customerMessagesCount === 1;
-
-                const config = { tone: 'Amigável', knowledgeBase, isFirstInteraction };
-                const botResponse = await generateChatbotResponse(lastMessage.text, config);
-
-                const botMessage: Message = {
-                    id: `msg-${Date.now()}-${Math.random()}`,
-                    chat_id: chat.id,
-                    sender: 'bot',
-                    text: botResponse.response,
-                    avatar_url: '/bot.png',
-                    timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                    type: 'text'
-                };
-
-                setChats(currentChats => currentChats.map(c => {
-                    if (c.id === chat.id) {
-                        const updatedChat = {
-                            ...c,
-                            messages: [...c.messages, botMessage],
-                            last_message: botMessage.text,
-                            timestamp: botMessage.timestamp,
-                        };
-                        if (botResponse.requiresHandoff) {
-                            updatedChat.handled_by = '1'; // Assign to manager (Ana Silva) on handoff
-                        }
-                        return updatedChat;
-                    }
-                    return c;
-                }));
-            }
-        };
-
-        const responseTimer = setTimeout(processBotResponses, 2000); // Add a small delay
-        return () => clearTimeout(responseTimer);
-    }, [chats, knowledgeBase]);
 
     const handleNavigateToChat = (contact: CrmContact) => {
         const existingChat = chats.find(chat => chat.contact_id === contact.id);
         if (existingChat) {
             setActiveChatId(existingChat.id);
         } else {
+            // This part can be enhanced to also create a chat in the database
             const newChat: Chat = {
                 id: `chat-${contact.id}-${Date.now()}`,
                 contact_id: contact.id,
@@ -341,7 +190,7 @@ const App: React.FC = () => {
                 timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                 unread_count: 0,
                 messages: [],
-                handled_by: currentUser?.id || 'bot', // Assign to current user
+                handled_by: currentUser?.id || 'bot',
             };
             setChats(currentChats => [newChat, ...currentChats]);
             setActiveChatId(newChat.id);
@@ -349,19 +198,16 @@ const App: React.FC = () => {
         setActiveView('whatsapp');
     };
 
-
     const handleSendMessage = useCallback(async (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => {
         if (!currentUser) return;
-        
-        const newMessage: Message = {
-            ...message,
-            id: `msg-${Date.now()}`,
-            timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        };
+        const { supabase } = await import('./services/supabase.ts');
+
+        // Optimistically update UI
+        const tempId = `msg-temp-${Date.now()}`;
+        const newMessage: Message = { ...message, id: tempId, timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) };
 
         setChats(currentChats => currentChats.map(chat => {
             if (chat.id === chatId) {
-                // If an agent sends a message in a bot-handled chat, they automatically take over.
                 const isBotHandled = chat.handled_by === 'bot';
                 return {
                     ...chat,
@@ -373,25 +219,65 @@ const App: React.FC = () => {
             }
             return chat;
         }));
+        
+        // Update database
+        const { data, error } = await supabase.from('messages').insert({ ...message, chat_id: chatId }).select().single();
+        if(error || !data) console.error("Failed to send message:", error);
+        
+        // Replace temp message with real one from DB
+        setChats(currentChats => currentChats.map(chat => chat.id === chatId ? { ...chat, messages: chat.messages.map(m => m.id === tempId ? data : m) } : chat));
 
     }, [currentUser, setChats]);
 
-    const handleTakeOverChat = (chatId: string) => {
+    const handleTakeOverChat = async (chatId: string) => {
         if (!currentUser) return;
-        setChats(currentChats => currentChats.map(chat =>
-            chat.id === chatId ? { ...chat, handled_by: currentUser.id } : chat
-        ));
+        const { supabase } = await import('./services/supabase.ts');
+        setChats(currentChats => currentChats.map(chat => chat.id === chatId ? { ...chat, handled_by: currentUser.id } : chat));
+        await supabase.from('chats').update({ handled_by: currentUser.id }).eq('id', chatId);
     };
     
-    const handleDeleteContact = (contactId: string) => {
+    const handleDeleteContact = async (contactId: string) => {
         if (currentUser?.role !== 'Gerente') {
             alert('Apenas gerentes podem remover contatos.');
             return;
         }
         if (window.confirm("Tem certeza que deseja remover este contato e todas as suas informações?")) {
-            setCrmContacts(prev => prev.filter(c => c.id !== contactId));
-            // Optional: also remove associated chats
-            setChats(prev => prev.filter(c => c.contact_id !== contactId));
+            const { supabase } = await import('./services/supabase.ts');
+            const { error } = await supabase.from('crm_contacts').delete().eq('id', contactId);
+            if (!error) {
+                setCrmContacts(prev => prev.filter(c => c.id !== contactId));
+                setChats(prev => prev.filter(c => c.contact_id !== contactId));
+            } else {
+                 alert('Falha ao remover o contato.');
+            }
+        }
+    };
+
+    const handleUpdateContact = async (updatedContact: CrmContact) => {
+        const { supabase } = await import('./services/supabase.ts');
+        // Separate activities to upsert them
+        const { activities, ...contactData } = updatedContact;
+    
+        const { error } = await supabase.from('crm_contacts').update(contactData).eq('id', contactData.id);
+    
+        if (activities && activities.length > 0) {
+            const activitiesToUpsert = activities.map(act => ({ ...act, contact_id: contactData.id }));
+            await supabase.from('activities').upsert(activitiesToUpsert);
+        }
+    
+        if (!error) {
+            setCrmContacts(current => current.map(c => c.id === updatedContact.id ? updatedContact : c));
+        } else {
+            console.error("Failed to update contact:", error);
+        }
+    };
+    
+    const handleAddContact = async (newContact: CrmContact) => {
+        const { supabase } = await import('./services/supabase.ts');
+        const { activities, ...contactData } = newContact;
+        const { data, error } = await supabase.from('crm_contacts').insert(contactData).select().single();
+        if(!error && data) {
+            setCrmContacts(current => [data, ...current]);
         }
     };
     
@@ -402,26 +288,21 @@ const App: React.FC = () => {
         try {
             const { sendEmail } = await import('./services/emailService.ts');
             const result = await sendEmail({ to: contact.email, subject, body });
-            if (result.success) {
-                // Add a record of the email to the contact's activities
-                const emailActivity: Activity = {
-                    id: `email-${Date.now()}`,
-                    type: 'email',
-                    subject: subject,
-                    text: body,
-                    author_id: currentUser.id,
-                    timestamp: new Date().toISOString(),
-                };
 
-                setCrmContacts(currentContacts =>
-                    currentContacts.map(c =>
-                        c.id === contact.id
-                            ? { ...c, activities: [...c.activities, emailActivity] }
-                            : c
-                    )
-                );
+            if (result.success) {
+                const { supabase } = await import('./services/supabase.ts');
+                const newActivity: Omit<Activity, 'id'> = {
+                    type: 'email', subject, text: body, author_id: currentUser.id, timestamp: new Date().toISOString(), contact_id: contact.id
+                };
+                const { data } = await supabase.from('activities').insert(newActivity).select().single();
+
+                if (data) {
+                    setCrmContacts(currentContacts =>
+                        currentContacts.map(c => c.id === contact.id ? { ...c, activities: [...c.activities, data] } : c)
+                    );
+                }
                 alert('Email enviado com sucesso!');
-                setEmailTarget(null); // Close the modal
+                setEmailTarget(null);
             } else {
                 alert('Falha ao enviar o email.');
             }
@@ -444,7 +325,7 @@ const App: React.FC = () => {
             case 'dashboard':
                 return <Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users} /></Suspense>;
             case 'whatsapp':
-                if (channels.length === 0) {
+                 if (channels.length === 0) {
                     return (
                         <div className="flex flex-col items-center justify-center h-full text-center bg-background-main dark:bg-gray-800 rounded-2xl p-8">
                             <WhatsAppIcon className="w-24 h-24 text-gray-300 dark:text-gray-600 mb-4" />
@@ -469,7 +350,7 @@ const App: React.FC = () => {
                                 users={users}
                                 quickReplies={quickReplies}
                                 crmContacts={crmContacts}
-                                setCrmContacts={setCrmContacts}
+                                setCrmContacts={setCrmContacts} // This should be updated to onUpdateContact
                                 onTakeOverChat={handleTakeOverChat}
                                 activeChatId={activeChatId}
                                 setActiveChatId={setActiveChatId}
@@ -492,7 +373,8 @@ const App: React.FC = () => {
             case 'crm-board':
                 return <Suspense fallback={<LoadingIndicator message="Carregando Funil CRM..." />}><CrmBoard 
                             contacts={visibleCrmContacts} 
-                            setContacts={setCrmContacts} 
+                            onUpdateContact={handleUpdateContact}
+                            onAddContact={handleAddContact}
                             users={users} 
                             currentUser={currentUser} 
                             onNavigateToChat={handleNavigateToChat}
@@ -501,7 +383,8 @@ const App: React.FC = () => {
             case 'contacts':
                 return <Suspense fallback={<LoadingIndicator message="Carregando Contatos..." />}><Contacts 
                             contacts={visibleCrmContacts} 
-                            setContacts={setCrmContacts} 
+                            onAddContact={handleAddContact}
+                            onUpdateContact={handleUpdateContact} 
                             currentUser={currentUser} 
                             onDeleteContact={handleDeleteContact} 
                             onSendEmail={setEmailTarget}
@@ -537,6 +420,10 @@ const App: React.FC = () => {
                 return <Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users}/></Suspense>;
         }
     };
+    
+    if (isLoading) {
+        return <LoadingIndicator message="Carregando dados da aplicação..." />;
+    }
 
     if (!currentUser) {
          return (
