@@ -1,8 +1,9 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
-import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel, Activity } from './types.ts';
+import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel } from './types.ts';
 import MainContent from './MainContent.tsx';
 
 // Lazy load components for code splitting
@@ -29,7 +30,8 @@ const resetAndCreatePrimaryUser = async () => {
     console.log("Iniciando a redefinição e criação do usuário primário...");
 
     // Order of deletion is important to respect foreign key constraints
-    const tablesToDelete = ['activities', 'messages', 'chats', 'quick_replies', 'knowledge_base', 'crm_contacts', 'users'];
+    // Removed 'activities' as the table does not exist.
+    const tablesToDelete = ['messages', 'chats', 'quick_replies', 'knowledge_base', 'crm_contacts', 'users'];
     
     for (const table of tablesToDelete) {
         console.log(`Removendo todos os registros da tabela: ${table}...`);
@@ -208,7 +210,7 @@ const App: React.FC = () => {
             { data: kbData }
         ] = await Promise.all([
              supabase.from('users').select('*'),
-             supabase.from('crm_contacts').select('*, activities(*)'),
+             supabase.from('crm_contacts').select('*'), // Removed join with non-existent 'activities' table
              supabase.from('chats').select('*, messages(*)'),
              supabase.from('quick_replies').select('*'),
              supabase.from('knowledge_base').select('*')
@@ -313,34 +315,12 @@ const App: React.FC = () => {
 
     const handleUpdateContact = async (updatedContact: CrmContact) => {
         const { supabase } = await import('./services/supabase.ts');
-        const { activities, ...contactData } = updatedContact;
     
-        const { error } = await supabase.from('crm_contacts').update(contactData).eq('id', contactData.id);
-    
-        if (activities && activities.length > 0) {
-            // New activities from AI or stage changes may not have an ID yet.
-            // Upserting ensures they are added to the DB.
-            const activitiesToUpsert = activities.map(act => ({ ...act, contact_id: contactData.id }));
-            await supabase.from('activities').upsert(activitiesToUpsert);
-        }
+        const { error } = await supabase.from('crm_contacts').update(updatedContact).eq('id', updatedContact.id);
     
         if (!error) {
-            // Refetch the contact to ensure local state has the latest data, 
-            // including DB-generated IDs for new activities.
-            const { data: refreshedContactData, error: refreshError } = await supabase
-                .from('crm_contacts')
-                .select('*, activities(*)')
-                .eq('id', updatedContact.id)
-                .single();
-
-            if (refreshedContactData && !refreshError) {
-                 setCrmContacts(current => current.map(c => c.id === refreshedContactData.id ? refreshedContactData : c));
-            } else {
-                // If refreshing fails, log the error but avoid setting state with stale data
-                // which could cause data consistency issues (e.g., activities without DB IDs).
-                // The update was successful in the DB, a page refresh will show the correct data.
-                console.error("Failed to refresh contact after update:", refreshError?.message);
-            }
+            // Update local state directly as we are no longer waiting for DB-generated IDs for activities.
+            setCrmContacts(current => current.map(c => c.id === updatedContact.id ? updatedContact : c));
         } else {
             console.error("Failed to update contact:", error);
         }
@@ -348,11 +328,9 @@ const App: React.FC = () => {
     
     const handleAddContact = async (newContact: Omit<CrmContact, 'id'>) => {
         const { supabase } = await import('./services/supabase.ts');
-        const { activities, ...contactData } = newContact;
-        const { data, error } = await supabase.from('crm_contacts').insert([contactData]).select().single();
+        const { data, error } = await supabase.from('crm_contacts').insert([newContact]).select().single();
         if(!error && data) {
-            const completeContact: CrmContact = { ...data, activities: activities || [] };
-            setCrmContacts(current => [completeContact, ...current]);
+            setCrmContacts(current => [data, ...current]);
         }
     };
 
@@ -402,17 +380,7 @@ const App: React.FC = () => {
             const result = await sendEmail({ to: contact.email, subject, body });
 
             if (result.success) {
-                const { supabase } = await import('./services/supabase.ts');
-                const newActivity: Omit<Activity, 'id'> = {
-                    type: 'email', subject, text: body, author_id: currentUser.id, timestamp: new Date().toISOString(), contact_id: contact.id
-                };
-                const { data } = await supabase.from('activities').insert([newActivity]).select().single();
-
-                if (data) {
-                    setCrmContacts(currentContacts =>
-                        currentContacts.map(c => c.id === contact.id ? { ...c, activities: [...c.activities, data] } : c)
-                    );
-                }
+                // Not logging activity as the table does not exist.
                 alert('Email enviado com sucesso!');
                 setEmailTarget(null);
             } else {

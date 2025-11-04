@@ -42,20 +42,6 @@ export interface Chat {
   handled_by: 'bot' | string; // bot or user id
 }
 
-export interface Activity {
-  id: string;
-  text: string;
-  author_id: string;
-  timestamp: string;
-  type: 'note' | 'email' | 'stage_change';
-  subject?: string;
-  metadata?: {
-    from?: string;
-    to?: string;
-  };
-  contact_id?: string; // Foreign key for Supabase
-}
-
 export interface CrmContact {
   id: string;
   name: string;
@@ -70,7 +56,6 @@ export interface CrmContact {
   temperature: 'Quente' | 'Morno' | 'Frio';
   next_action_date: string; // ISO format YYYY-MM-DD
   lead_source: string;
-  activities: Activity[];
 }
 
 export interface QuickReply {

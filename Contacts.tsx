@@ -40,7 +40,6 @@ const AddContactModal: React.FC<{
             temperature: 'Frio',
             next_action_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
             lead_source: 'Manual',
-            activities: [],
         };
         onAdd(newContact);
         onClose();

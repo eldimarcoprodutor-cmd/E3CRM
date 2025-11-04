@@ -53,11 +53,10 @@ const AiChatbot: React.FC<AiChatbotProps> = ({ messages, onSendMessage, isLoadin
                             <ChatbotAiIcon className="w-5 h-5 text-white" />
                         </div>
                         <div className="max-w-xl p-3 rounded-2xl bg-gray-100 dark:bg-gray-700 text-text-main dark:text-gray-200 rounded-bl-none">
-                            <p className="text-sm whitespace-pre-wrap">Olá! Sou seu assistente de IA. Posso buscar informações de contatos, adicionar notas e encontrar leads para você. Como posso ajudar?
+                            <p className="text-sm whitespace-pre-wrap">Olá! Sou seu assistente de IA. Posso buscar informações de contatos e encontrar leads para você. Como posso ajudar?
                             <br/><br/>
                             Tente perguntar:
                             <br/>- "Quem é Carlos Pereira?"
-                            <br/>- "Adicione uma nota para Mariana Costa: ligar amanhã."
                             <br/>- "Quais são meus leads quentes?"
                             </p>
                         </div>

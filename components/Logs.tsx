@@ -27,6 +27,8 @@ const Logs: React.FC<LogsProps> = ({ users }) => {
     const [logs] = useState<LogEntry[]>(initialLogs);
     const [userFilter, setUserFilter] = useState<string>('');
     const [actionFilter, setActionFilter] = useState<string>('');
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
 
     const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
     const uniqueActions = useMemo(() => [...new Set(logs.map(log => log.action))], [logs]);
@@ -35,13 +37,31 @@ const Logs: React.FC<LogsProps> = ({ users }) => {
         return logs.filter(log => {
             const userMatch = !userFilter || log.userId === userFilter;
             const actionMatch = !actionFilter || log.action === actionFilter;
-            return userMatch && actionMatch;
+
+            const logDate = new Date(log.timestamp);
+            let dateMatch = true;
+            if (startDate) {
+                const start = new Date(startDate + 'T00:00:00');
+                if (logDate < start) {
+                    dateMatch = false;
+                }
+            }
+            if (endDate) {
+                const end = new Date(endDate + 'T23:59:59');
+                if (logDate > end) {
+                    dateMatch = false;
+                }
+            }
+            
+            return userMatch && actionMatch && dateMatch;
         });
-    }, [logs, userFilter, actionFilter]);
+    }, [logs, userFilter, actionFilter, startDate, endDate]);
     
     const clearFilters = () => {
         setUserFilter('');
         setActionFilter('');
+        setStartDate('');
+        setEndDate('');
     };
 
     return (
@@ -49,8 +69,8 @@ const Logs: React.FC<LogsProps> = ({ users }) => {
             <h1 className="text-3xl font-bold mb-6 text-text-main dark:text-white">Logs de Atividade</h1>
 
             <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-lg mb-6">
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex-grow">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    <div className="lg:col-span-1">
                         <label htmlFor="user-filter" className="text-sm font-medium text-text-secondary dark:text-gray-300">Usuário</label>
                         <select id="user-filter" value={userFilter} onChange={e => setUserFilter(e.target.value)} className="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-700 border border-border-neutral dark:border-gray-600 rounded-lg text-sm">
                             <option value="">Todos os usuários</option>
@@ -59,7 +79,7 @@ const Logs: React.FC<LogsProps> = ({ users }) => {
                             ))}
                         </select>
                     </div>
-                     <div className="flex-grow">
+                     <div className="lg:col-span-1">
                         <label htmlFor="action-filter" className="text-sm font-medium text-text-secondary dark:text-gray-300">Ação</label>
                         <select id="action-filter" value={actionFilter} onChange={e => setActionFilter(e.target.value)} className="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-700 border border-border-neutral dark:border-gray-600 rounded-lg text-sm">
                             <option value="">Todas as ações</option>
@@ -68,7 +88,27 @@ const Logs: React.FC<LogsProps> = ({ users }) => {
                             ))}
                         </select>
                     </div>
-                    <button onClick={clearFilters} className="self-end px-4 py-2 mt-1 text-sm font-medium bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500">
+                     <div className="lg:col-span-1">
+                        <label htmlFor="start-date-filter" className="text-sm font-medium text-text-secondary dark:text-gray-300">Data Inicial</label>
+                        <input
+                            id="start-date-filter"
+                            type="date"
+                            value={startDate}
+                            onChange={e => setStartDate(e.target.value)}
+                            className="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-700 border border-border-neutral dark:border-gray-600 rounded-lg text-sm"
+                        />
+                    </div>
+                     <div className="lg:col-span-1">
+                        <label htmlFor="end-date-filter" className="text-sm font-medium text-text-secondary dark:text-gray-300">Data Final</label>
+                         <input
+                            id="end-date-filter"
+                            type="date"
+                            value={endDate}
+                            onChange={e => setEndDate(e.target.value)}
+                            className="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-700 border border-border-neutral dark:border-gray-600 rounded-lg text-sm"
+                        />
+                    </div>
+                    <button onClick={clearFilters} className="px-4 py-2 text-sm font-medium bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 w-full lg:w-auto">
                         Limpar Filtros
                     </button>
                 </div>

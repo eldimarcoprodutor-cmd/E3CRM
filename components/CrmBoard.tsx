@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { CrmContact, User, Activity } from '../types.ts';
+import type { CrmContact, User } from '../types.ts';
 import { EmailIcon } from './icons/EmailIcon.tsx';
 import { ContactDetailModal } from './ContactDetailModal.tsx';
 
@@ -50,8 +50,6 @@ const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, on
     const actionDate = new Date(contact.next_action_date + 'T00:00:00');
 
     const isOverdue = actionDate < today && contact.pipeline_stage !== 'Fechado' && contact.pipeline_stage !== 'Perdido';
-    const latestActivity = contact.activities?.[contact.activities.length - 1];
-    const activityAuthor = latestActivity ? userMap.get(latestActivity.author_id) : null;
 
     const handleActionClick = (e: React.MouseEvent, action: () => void) => {
         e.stopPropagation(); // Prevent card from being dragged when clicking a button
@@ -89,19 +87,6 @@ const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, on
                 </span>
             </div>
 
-            {/* Latest Activity */}
-            {latestActivity && (
-                <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-md text-xs">
-                    <p className="text-gray-800 dark:text-gray-200 truncate">
-                        {latestActivity.type === 'email' ? `📧 Email: ${latestActivity.subject}` : latestActivity.type === 'stage_change' ? `🔁 ${latestActivity.text}` : `📝 ${latestActivity.text}`}
-                    </p>
-                    <p className="text-text-secondary dark:text-gray-400 mt-1 text-right">
-                        - {activityAuthor?.name.split(' ')[0] || '...'} em {new Date(latestActivity.timestamp).toLocaleDateString('pt-BR')}
-                    </p>
-                </div>
-            )}
-
-
             {/* Tags Section */}
             <div className="flex flex-wrap gap-1 mb-3">
                 {contact.tags.map(tag => (
@@ -129,13 +114,8 @@ const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, on
                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 4.315 1.919 6.066l-1.225 4.485 4.625-1.217z" />
                         </svg>
                     </button>
-                    <button onClick={(e) => handleActionClick(e, () => onOpenDetails(contact))} className="relative hover:text-primary transition-colors" title="Ver Detalhes / Adicionar Nota">
+                    <button onClick={(e) => handleActionClick(e, () => onOpenDetails(contact))} className="relative hover:text-primary transition-colors" title="Ver Detalhes">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                        {(contact.activities?.length || 0) > 0 && 
-                            <span className="absolute -top-1 -right-1.5 flex items-center justify-center w-3.5 h-3.5 text-xs font-bold text-white bg-primary rounded-full">
-                                {contact.activities?.length}
-                            </span>
-                        }
                     </button>
                 </div>
                 
@@ -241,7 +221,6 @@ const AddOpportunityModal: React.FC<{
             temperature,
             next_action_date: nextActionDate,
             lead_source: leadSource,
-            activities: [],
         };
         onAdd(newContact);
         onClose();
@@ -339,25 +318,14 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, onUpdateContact, onAddCon
         if (draggedItemId) {
             const contactToMove = contacts.find(c => c.id === draggedItemId);
             if (!contactToMove || contactToMove.pipeline_stage === newStage) return;
-
-            const originalStage = contactToMove.pipeline_stage;
     
-            const stageChangeActivity: Omit<Activity, 'id'> = {
-                type: 'stage_change',
-                text: `Etapa movida para ${newStage}`,
-                author_id: currentUser.id,
-                timestamp: new Date().toISOString(),
-                metadata: { from: originalStage, to: newStage }
-            };
-
             const updatedContact = {
                 ...contactToMove,
                 pipeline_stage: newStage,
                 last_interaction: new Date().toISOString().split('T')[0],
-                activities: [...contactToMove.activities, stageChangeActivity as Activity]
             };
 
-            onUpdateContact(updatedContact);
+            onUpdateContact(updatedContact as CrmContact);
         }
     };
 

@@ -1,6 +1,6 @@
 import { GoogleGenAI, Chat, FunctionDeclaration, Type, GenerateContentResponse } from "@google/genai";
 // Fix: Import `KnowledgeBaseItem` to resolve a type error.
-import type { CrmContact, User, Activity, AiChatbotResponse, KnowledgeBaseItem } from '../types.ts';
+import type { CrmContact, User, AiChatbotResponse, KnowledgeBaseItem } from '../types.ts';
 
 // The API key is assumed to be available in process.env.API_KEY
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -17,19 +17,6 @@ const getContactDetailsFunction: FunctionDeclaration = {
             name: { type: Type.STRING, description: 'O nome do contato a ser procurado.' },
         },
         required: ['name'],
-    },
-};
-
-const addNoteToContactFunction: FunctionDeclaration = {
-    name: 'addNoteToContact',
-    description: 'Adiciona uma nota de texto a um contato específico.',
-    parameters: {
-        type: Type.OBJECT,
-        properties: {
-            contactName: { type: Type.STRING, description: 'O nome do contato que receberá a nota.' },
-            noteText: { type: Type.STRING, description: 'O conteúdo da nota a ser adicionada.' },
-        },
-        required: ['contactName', 'noteText'],
     },
 };
 
@@ -53,9 +40,9 @@ const getAiChat = () => {
         aiChat = ai.chats.create({
             model: 'gemini-2.5-flash',
             config: {
-                systemInstruction: 'Você é um assistente de IA especialista em CRM e atendimento ao cliente, integrado a um sistema chamado E3CRM. Sua função é ajudar os usuários (gerentes e atendentes) a serem mais produtivos. Forneça respostas concisas, práticas e úteis sobre vendas, marketing, suporte, e como usar um CRM de forma eficaz. Aja como um coach de produtividade e um especialista em software. Quando uma função é executada com sucesso, confirme a ação para o usuário de forma amigável (ex: "Nota adicionada com sucesso!").',
+                systemInstruction: 'Você é um assistente de IA especialista em CRM e atendimento ao cliente, integrado a um sistema chamado E3CRM. Sua função é ajudar os usuários (gerentes e atendentes) a serem mais produtivos. Forneça respostas concisas, práticas e úteis sobre vendas, marketing, suporte, e como usar um CRM de forma eficaz. Aja como um coach de produtividade e um especialista em software. Quando uma função é executada com sucesso, confirme a ação para o usuário de forma amigável (ex: "Busca realizada com sucesso!").',
                 tools: [{
-                    functionDeclarations: [getContactDetailsFunction, addNoteToContactFunction, findLeadsByTemperatureFunction]
+                    functionDeclarations: [getContactDetailsFunction, findLeadsByTemperatureFunction]
                 }],
             },
         });
@@ -80,23 +67,6 @@ const executeFunctionCall = (functionCall: GenerateContentResponse['functionCall
                 return { result: { contact } };
             }
             return { result: { error: 'Contato não encontrado.' } };
-        }
-        case 'addNoteToContact': {
-            const contactName = args.contactName as string;
-            const noteText = args.noteText as string;
-            const contactToUpdate = contacts.find(c => c.name.toLowerCase() === contactName.toLowerCase());
-
-            if (contactToUpdate) {
-                const newNote: Omit<Activity, 'id'> = {
-                    text: noteText,
-                    author_id: currentUser.id,
-                    timestamp: new Date().toISOString(),
-                    type: 'note',
-                };
-                const updatedContact = { ...contactToUpdate, activities: [...contactToUpdate.activities, newNote as Activity] };
-                return { result: { success: true, message: 'Nota adicionada.' }, updatedContact };
-            }
-            return { result: { success: false, error: `Contato "${contactName}" não encontrado.` } };
         }
         case 'findLeadsByTemperature': {
             const temperature = args.temperature as CrmContact['temperature'];
@@ -148,7 +118,8 @@ export const askAiChatbot = async (message: string, contacts: CrmContact[], curr
             }
 
             // Send the function responses back to the model
-            response = await chat.sendMessage({ parts: functionResponseParts });
+            // Fix: The chat.sendMessage method expects an array of Parts directly for function responses, not an object with a 'parts' property.
+            response = await chat.sendMessage(functionResponseParts);
         }
 
         return { text: response.text, updatedContact: contactThatWasUpdated };
