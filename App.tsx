@@ -115,6 +115,26 @@ const App: React.FC = () => {
         setActiveView('dashboard');
     };
     
+    const handleSignUp = (name: string, email: string, password: string): { success: boolean, error?: string } => {
+        const userExists = users.some(u => u.email.toLowerCase() === email.toLowerCase());
+        if (userExists) {
+            return { success: false, error: 'Este email já está em uso.' };
+        }
+    
+        const newUser: User = {
+            id: `user-${Date.now()}`,
+            name,
+            email,
+            password,
+            role: 'Atendente', // New users are always agents by default
+            avatar_url: `https://i.pravatar.cc/150?u=${Date.now()}`,
+        };
+    
+        setUsers(prevUsers => [...prevUsers, newUser]);
+        setCurrentUser(newUser); // Automatically log in the new user
+        return { success: true };
+    };
+
     // Data segregation based on user role
     const visibleCrmContacts = useMemo(() => {
         if (!currentUser) return [];
@@ -521,7 +541,7 @@ const App: React.FC = () => {
     if (!currentUser) {
          return (
             <Suspense fallback={<LoadingIndicator message="Carregando..." />}>
-                <Login users={users} onLoginSuccess={setCurrentUser} />
+                <Login users={users} onLoginSuccess={setCurrentUser} onSignUp={handleSignUp} />
             </Suspense>
         );
     }
