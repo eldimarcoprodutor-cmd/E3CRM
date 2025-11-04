@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { CrmContact, User } from '../types.ts';
-import { ContactDetailModal } from './ContactDetailModal.tsx';
+import { ContactDetailModal } from './components/ContactDetailModal.tsx';
 
 interface ContactsProps {
     contacts: CrmContact[];

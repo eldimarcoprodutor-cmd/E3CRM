@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { CrmContact, User, Activity } from './types.ts';
 import { EmailIcon } from './icons/EmailIcon.tsx';
-import { ContactDetailModal } from './ContactDetailModal.tsx';
+import { ContactDetailModal } from './components/ContactDetailModal.tsx';
 
 
 interface CrmBoardProps {
