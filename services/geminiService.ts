@@ -1,6 +1,6 @@
 import { GoogleGenAI, Chat, FunctionDeclaration, Type, GenerateContentResponse } from "@google/genai";
 // Fix: Import `KnowledgeBaseItem` to resolve a type error.
-import type { CrmContact, User, Note, AiChatbotResponse, KnowledgeBaseItem } from '../types.ts';
+import type { CrmContact, User, Activity, AiChatbotResponse, KnowledgeBaseItem } from '../types.ts';
 
 // The API key is assumed to be available in process.env.API_KEY
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -88,14 +88,14 @@ const executeFunctionCall = (functionCall: GenerateContentResponse['functionCall
             const updatedContacts = contacts.map(c => {
                 if (c.name.toLowerCase() === contactName.toLowerCase()) {
                     found = true;
-                    const newNote: Note = {
+                    const newNote: Activity = {
                         id: `note-${Date.now()}`,
                         text: noteText,
                         author_id: currentUser.id,
                         timestamp: new Date().toISOString(),
                         type: 'note',
                     };
-                    return { ...c, notes: [...c.notes, newNote] };
+                    return { ...c, activities: [...c.activities, newNote] };
                 }
                 return c;
             });

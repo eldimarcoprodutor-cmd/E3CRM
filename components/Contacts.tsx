@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { CrmContact, User } from '../types.ts';
-import { EmailIcon } from './icons/EmailIcon.tsx';
+import { ContactDetailModal } from './ContactDetailModal.tsx';
 
 interface ContactsProps {
     contacts: CrmContact[];
@@ -39,7 +39,7 @@ const AddContactModal: React.FC<{
             temperature: 'Frio',
             next_action_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
             lead_source: 'Manual',
-            notes: [],
+            activities: [],
         };
         onAdd(newContact);
         onClose();
@@ -64,128 +64,6 @@ const AddContactModal: React.FC<{
     );
 };
 
-// Modal for viewing/editing contact details
-const ContactDetailsModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    contact: CrmContact | null;
-    onSave: (updatedContact: CrmContact) => void;
-    currentUser: User;
-    onDelete: (contactId: string) => void;
-}> = ({ isOpen, onClose, contact, onSave, currentUser, onDelete }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState<CrmContact | null>(contact);
-
-    useEffect(() => {
-        setFormData(contact);
-        setIsEditing(false); // Reset edit mode when contact changes
-    }, [contact]);
-
-    if (!isOpen || !formData) return null;
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => prev ? { ...prev, [name]: value } : null);
-    };
-
-    const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const tags = e.target.value.split(',').map(t => t.trim());
-        setFormData(prev => prev ? { ...prev, tags } : null);
-    };
-
-    const handleSave = () => {
-        if (formData) {
-            onSave(formData);
-        }
-        setIsEditing(false);
-        onClose();
-    };
-    
-    const handleDeleteClick = () => {
-        if (formData) {
-            onDelete(formData.id);
-            onClose();
-        }
-    };
-
-    const handleClose = () => {
-      setIsEditing(false);
-      onClose();
-    }
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-text-main dark:text-white">{isEditing ? 'Editando Contato' : 'Detalhes do Contato'}</h3>
-                    <button onClick={handleClose} className="text-text-secondary hover:text-text-main dark:hover:text-white text-2xl">&times;</button>
-                </div>
-
-                <div className="space-y-4">
-                    <div>
-                        <label className="text-sm font-medium text-text-secondary dark:text-gray-300">Nome</label>
-                        {isEditing ? (
-                            <input name="name" value={formData.name} onChange={handleChange} className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mt-1" />
-                        ) : (
-                            <p className="p-2 text-text-main dark:text-white">{formData.name}</p>
-                        )}
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-text-secondary dark:text-gray-300">Email</label>
-                        {isEditing ? (
-                            <input name="email" value={formData.email} onChange={handleChange} className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mt-1" />
-                        ) : (
-                            <p className="p-2 text-text-main dark:text-white">{formData.email}</p>
-                        )}
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-text-secondary dark:text-gray-300">Telefone</label>
-                        {isEditing ? (
-                            <input name="phone" value={formData.phone} onChange={handleChange} className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mt-1" />
-                        ) : (
-                            <p className="p-2 text-text-main dark:text-white">{formData.phone}</p>
-                        )}
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-text-secondary dark:text-gray-300">Tags</label>
-                        {isEditing ? (
-                            <input value={formData.tags.join(', ')} onChange={handleTagsChange} className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mt-1" />
-                        ) : (
-                            <div className="flex flex-wrap gap-2 mt-2 p-2">
-                                {formData.tags.map(tag => (
-                                    <span key={tag} className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded-full text-text-secondary dark:text-gray-300">{tag}</span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex justify-between items-center pt-4 mt-4 border-t dark:border-gray-700">
-                     <div>
-                        {currentUser.role === 'Gerente' && !isEditing && (
-                            <button onClick={handleDeleteClick} className="px-4 py-2 text-sm font-medium text-status-error bg-status-error/10 rounded-lg hover:bg-status-error/20">
-                                Remover Contato
-                            </button>
-                        )}
-                    </div>
-                    <div className="flex justify-end gap-2">
-                        {isEditing ? (
-                            <>
-                                <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg">Cancelar</button>
-                                <button onClick={handleSave} className="px-4 py-2 text-white bg-primary rounded-lg">Salvar</button>
-                            </>
-                        ) : (
-                            <>
-                                <button onClick={handleClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg">Fechar</button>
-                                <button onClick={() => setIsEditing(true)} className="px-4 py-2 text-white bg-primary rounded-lg">Editar</button>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser, onDeleteContact, onSendEmail }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -282,14 +160,17 @@ const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser,
                 onAdd={handleAddContact}
             />
 
-            <ContactDetailsModal
-                isOpen={!!selectedContact}
-                onClose={handleCloseDetails}
-                contact={selectedContact}
-                onSave={handleSaveContact}
-                currentUser={currentUser}
-                onDelete={onDeleteContact}
-            />
+            {selectedContact && (
+                <ContactDetailModal
+                    isOpen={!!selectedContact}
+                    onClose={handleCloseDetails}
+                    contact={selectedContact}
+                    onSave={handleSaveContact}
+                    currentUser={currentUser}
+                    onDelete={onDeleteContact}
+                    userMap={new Map()}
+                />
+            )}
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
-import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel, Note } from './types.ts';
+import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel, Activity } from './types.ts';
 import { Login } from './components/Login.tsx';
 import { WhatsAppIcon } from './components/icons/WhatsAppIcon.tsx';
 import { generateChatbotResponse } from './services/geminiService.ts';
@@ -33,10 +33,10 @@ const usersData: User[] = [
 ];
 
 const crmContactsData: CrmContact[] = [
-    { id: '101', name: 'Carlos Pereira', email: 'carlos.p@example.com', phone: '+55 11 98765-4321', avatar_url: 'https://i.pravatar.cc/150?u=101', tags: ['cliente-vip', 'e-commerce'], pipeline_stage: 'Fechado', last_interaction: '2024-07-20', owner_id: '2', value: 1500, temperature: 'Quente', next_action_date: '2024-07-25', lead_source: 'Indicação', notes: [] },
-    { id: '102', name: 'Mariana Costa', email: 'mari.costa@example.com', phone: '+55 21 91234-5678', avatar_url: 'https://i.pravatar.cc/150?u=102', tags: ['e-commerce', 'newsletter'], pipeline_stage: 'Proposta', last_interaction: '2024-07-22', owner_id: '2', value: 3200, temperature: 'Morno', next_action_date: '2024-07-28', lead_source: 'Website', notes: [] },
-    { id: '103', name: 'Tech Solutions Inc.', email: 'contato@techsolutions.com', phone: '+55 11 5555-1010', avatar_url: 'https://i.pravatar.cc/150?u=103', tags: ['B2B', 'parceria'], pipeline_stage: 'Qualificação', last_interaction: '2024-07-21', owner_id: '3', value: 12500, temperature: 'Quente', next_action_date: '2024-07-20', lead_source: 'Evento', notes: [] },
-    { id: '104', name: 'João Almeida', email: 'joao.a@example.net', phone: '+55 81 99999-8888', avatar_url: 'https://i.pravatar.cc/150?u=104', tags: ['lead-frio'], pipeline_stage: 'Contato', last_interaction: '2024-07-15', owner_id: '3', value: 500, temperature: 'Frio', next_action_date: '2024-08-01', lead_source: 'Anúncio Facebook', notes: [] },
+    { id: '101', name: 'Carlos Pereira', email: 'carlos.p@example.com', phone: '+55 11 98765-4321', avatar_url: 'https://i.pravatar.cc/150?u=101', tags: ['cliente-vip', 'e-commerce'], pipeline_stage: 'Fechado', last_interaction: '2024-07-20', owner_id: '2', value: 1500, temperature: 'Quente', next_action_date: '2024-07-25', lead_source: 'Indicação', activities: [] },
+    { id: '102', name: 'Mariana Costa', email: 'mari.costa@example.com', phone: '+55 21 91234-5678', avatar_url: 'https://i.pravatar.cc/150?u=102', tags: ['e-commerce', 'newsletter'], pipeline_stage: 'Proposta', last_interaction: '2024-07-22', owner_id: '2', value: 3200, temperature: 'Morno', next_action_date: '2024-07-28', lead_source: 'Website', activities: [] },
+    { id: '103', name: 'Tech Solutions Inc.', email: 'contato@techsolutions.com', phone: '+55 11 5555-1010', avatar_url: 'https://i.pravatar.cc/150?u=103', tags: ['B2B', 'parceria'], pipeline_stage: 'Qualificação', last_interaction: '2024-07-21', owner_id: '3', value: 12500, temperature: 'Quente', next_action_date: '2024-07-20', lead_source: 'Evento', activities: [] },
+    { id: '104', name: 'João Almeida', email: 'joao.a@example.net', phone: '+55 81 99999-8888', avatar_url: 'https://i.pravatar.cc/150?u=104', tags: ['lead-frio'], pipeline_stage: 'Contato', last_interaction: '2024-07-15', owner_id: '3', value: 500, temperature: 'Frio', next_action_date: '2024-08-01', lead_source: 'Anúncio Facebook', activities: [] },
 ];
 
 const initialChats: Chat[] = [
@@ -200,7 +200,7 @@ const App: React.FC = () => {
                     temperature: 'Morno',
                     next_action_date: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString().split('T')[0], // Follow up in 3 days
                     lead_source: 'WhatsApp',
-                    notes: [],
+                    activities: [],
                 };
                 newContactsToCreate.push(newContact);
                 existingContactIds.add(chat.contact_id); // Avoid duplicates in the same run
@@ -355,8 +355,8 @@ const App: React.FC = () => {
         try {
             const result = await sendEmail({ to: contact.email, subject, body });
             if (result.success) {
-                // Add a record of the email to the contact's notes
-                const emailNote: Note = {
+                // Add a record of the email to the contact's activities
+                const emailActivity: Activity = {
                     id: `email-${Date.now()}`,
                     type: 'email',
                     subject: subject,
@@ -368,7 +368,7 @@ const App: React.FC = () => {
                 setCrmContacts(currentContacts =>
                     currentContacts.map(c =>
                         c.id === contact.id
-                            ? { ...c, notes: [...c.notes, emailNote] }
+                            ? { ...c, activities: [...c.activities, emailActivity] }
                             : c
                     )
                 );
@@ -394,7 +394,7 @@ const App: React.FC = () => {
         }
         switch (activeView) {
             case 'dashboard':
-                return <Dashboard />;
+                return <Dashboard contacts={visibleCrmContacts} users={users} />;
             case 'whatsapp':
                 if (channels.length === 0) {
                     return (
@@ -481,7 +481,7 @@ const App: React.FC = () => {
                             setQuickReplies={setQuickReplies} 
                         />;
             default:
-                return <Dashboard />;
+                return <Dashboard contacts={visibleCrmContacts} users={users}/>;
         }
     };
 

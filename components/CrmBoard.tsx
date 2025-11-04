@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import type { CrmContact, User, Note } from '../types.ts';
+import type { CrmContact, User, Activity } from '../types.ts';
 import { EmailIcon } from './icons/EmailIcon.tsx';
+import { ContactDetailModal } from './ContactDetailModal.tsx';
+
 
 interface CrmBoardProps {
     contacts: CrmContact[];
@@ -15,7 +17,7 @@ const pipelineStages: CrmContact['pipeline_stage'][] = ['Contato', 'Qualificaç�
 
 const stageColors = {
     'Contato': 'bg-primary',
-    'Qualificação': 'bg-indigo-500', // Using a distinct color as none was provided
+    'Qualificação': 'bg-indigo-500',
     'Proposta': 'bg-status-warning',
     'Fechado': 'bg-status-success',
     'Perdido': 'bg-status-error',
@@ -34,21 +36,21 @@ interface CardProps {
     isBeingDragged: boolean;
     onDragStart: (e: React.DragEvent<HTMLDivElement>, contactId: string) => void;
     onDragEnd: (e: React.DragEvent<HTMLDivElement>) => void;
-    onAddNoteClick: (contact: CrmContact) => void;
+    onOpenDetails: (contact: CrmContact) => void;
     onNavigateToChat: (contact: CrmContact) => void;
     onSendEmail: (contact: CrmContact) => void;
 }
 
 
-const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, onDragStart, onDragEnd, onAddNoteClick, onNavigateToChat, onSendEmail }) => {
+const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, onDragStart, onDragEnd, onOpenDetails, onNavigateToChat, onSendEmail }) => {
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const actionDate = new Date(contact.next_action_date + 'T00:00:00');
 
     const isOverdue = actionDate < today && contact.pipeline_stage !== 'Fechado' && contact.pipeline_stage !== 'Perdido';
-    const latestNote = contact.notes?.[contact.notes.length - 1];
-    const noteAuthor = latestNote ? userMap.get(latestNote.author_id) : null;
+    const latestActivity = contact.activities?.[contact.activities.length - 1];
+    const activityAuthor = latestActivity ? userMap.get(latestActivity.author_id) : null;
 
     const handleActionClick = (e: React.MouseEvent, action: () => void) => {
         e.stopPropagation(); // Prevent card from being dragged when clicking a button
@@ -60,7 +62,7 @@ const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, on
             draggable
             onDragStart={(e) => onDragStart(e, contact.id)}
             onDragEnd={onDragEnd}
-            onClick={() => onAddNoteClick(contact)}
+            onClick={() => onOpenDetails(contact)}
             className={`p-4 mb-4 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all duration-200 cursor-pointer active:cursor-grabbing border-l-4 border-transparent hover:border-primary ${isBeingDragged ? 'opacity-40' : ''}`}
             id={`card-${contact.id}`}
         >
@@ -86,14 +88,14 @@ const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, on
                 </span>
             </div>
 
-            {/* Latest Note */}
-            {latestNote && (
+            {/* Latest Activity */}
+            {latestActivity && (
                 <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-md text-xs">
                     <p className="text-gray-800 dark:text-gray-200 truncate">
-                        {latestNote.type === 'email' ? `📧 Email: ${latestNote.subject}` : `📝 ${latestNote.text}`}
+                        {latestActivity.type === 'email' ? `📧 Email: ${latestActivity.subject}` : latestActivity.type === 'stage_change' ? `🔁 ${latestActivity.text}` : `📝 ${latestActivity.text}`}
                     </p>
                     <p className="text-text-secondary dark:text-gray-400 mt-1 text-right">
-                        - {noteAuthor?.name.split(' ')[0] || '...'} em {new Date(latestNote.timestamp).toLocaleDateString('pt-BR')}
+                        - {activityAuthor?.name.split(' ')[0] || '...'} em {new Date(latestActivity.timestamp).toLocaleDateString('pt-BR')}
                     </p>
                 </div>
             )}
@@ -126,11 +128,11 @@ const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, on
                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 4.315 1.919 6.066l-1.225 4.485 4.625-1.217z" />
                         </svg>
                     </button>
-                    <button onClick={(e) => handleActionClick(e, () => onAddNoteClick(contact))} className="relative hover:text-primary transition-colors" title="Adicionar Nota">
+                    <button onClick={(e) => handleActionClick(e, () => onOpenDetails(contact))} className="relative hover:text-primary transition-colors" title="Ver Detalhes / Adicionar Nota">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                        {(contact.notes?.length || 0) > 0 && 
+                        {(contact.activities?.length || 0) > 0 && 
                             <span className="absolute -top-1 -right-1.5 flex items-center justify-center w-3.5 h-3.5 text-xs font-bold text-white bg-primary rounded-full">
-                                {contact.notes?.length}
+                                {contact.activities?.length}
                             </span>
                         }
                     </button>
@@ -159,13 +161,13 @@ interface ColumnProps {
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
     onDrop: (e: React.DragEvent<HTMLDivElement>, stage: CrmContact['pipeline_stage']) => void;
-    onAddNoteClick: (contact: CrmContact) => void;
+    onOpenDetails: (contact: CrmContact) => void;
     onNavigateToChat: (contact: CrmContact) => void;
     onSendEmail: (contact: CrmContact) => void;
 }
 
 
-const Column: React.FC<ColumnProps> = ({ stage, contacts, users, userMap, isDragOver, draggedItemId, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop, onAddNoteClick, onNavigateToChat, onSendEmail }) => {
+const Column: React.FC<ColumnProps> = ({ stage, contacts, users, userMap, isDragOver, draggedItemId, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop, onOpenDetails, onNavigateToChat, onSendEmail }) => {
     const totalValue = useMemo(() => contacts.reduce((sum, contact) => sum + contact.value, 0), [contacts]);
 
     return (
@@ -196,7 +198,7 @@ const Column: React.FC<ColumnProps> = ({ stage, contacts, users, userMap, isDrag
                       userMap={userMap} 
                       onDragStart={onDragStart} 
                       onDragEnd={onDragEnd} 
-                      onAddNoteClick={onAddNoteClick} 
+                      onOpenDetails={onOpenDetails} 
                       onNavigateToChat={onNavigateToChat} 
                       onSendEmail={onSendEmail}
                       isBeingDragged={draggedItemId === contact.id}
@@ -239,7 +241,7 @@ const AddOpportunityModal: React.FC<{
             temperature,
             next_action_date: nextActionDate,
             lead_source: leadSource,
-            notes: [],
+            activities: [],
         };
         onAdd(newContact);
         onClose();
@@ -285,61 +287,35 @@ const AddOpportunityModal: React.FC<{
     );
 };
 
-const AddNoteModal: React.FC<{
-    contact: CrmContact;
-    currentUser: User;
-    onClose: () => void;
-    onSave: (noteText: string) => void;
-}> = ({ contact, currentUser, onClose, onSave }) => {
-    const [noteText, setNoteText] = useState('');
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (noteText.trim()) {
-            onSave(noteText);
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-text-main dark:text-white">Adicionar Nota para {contact.name}</h3>
-                    <button onClick={onClose} className="text-text-secondary hover:text-text-main dark:hover:text-white text-2xl">&times;</button>
-                </div>
-                <form onSubmit={handleSubmit}>
-                    <textarea
-                        rows={5}
-                        value={noteText}
-                        onChange={(e) => setNoteText(e.target.value)}
-                        placeholder={`Adicionando nota como ${currentUser.name}...`}
-                        className="w-full p-2 bg-gray-100 dark:bg-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        autoFocus
-                    />
-                    <div className="flex justify-end gap-2 pt-4">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium bg-gray-200 dark:bg-gray-600 rounded-lg">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-lg" disabled={!noteText.trim()}>Salvar Nota</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-
 const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, currentUser, onNavigateToChat, onSendEmail }) => {
     const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
     const [dragOverStage, setDragOverStage] = useState<CrmContact['pipeline_stage'] | null>(null);
     const [isAddOppModalOpen, setAddOppModalOpen] = useState(false);
-    const [noteModalTarget, setNoteModalTarget] = useState<CrmContact | null>(null);
+    const [detailsModalTarget, setDetailsModalTarget] = useState<CrmContact | null>(null);
     const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
+
+    // Filtering State
+    const [ownerFilter, setOwnerFilter] = useState('');
+    const [tagFilter, setTagFilter] = useState('');
+    const [temperatureFilter, setTemperatureFilter] = useState('');
+    const allTags = useMemo(() => [...new Set(contacts.flatMap(c => c.tags))], [contacts]);
+
+
+    const filteredContacts = useMemo(() => {
+        return contacts.filter(contact => {
+            const ownerMatch = !ownerFilter || contact.owner_id === ownerFilter;
+            const tagMatch = !tagFilter || contact.tags.includes(tagFilter);
+            const temperatureMatch = !temperatureFilter || contact.temperature === temperatureFilter;
+            return ownerMatch && tagMatch && temperatureMatch;
+        });
+    }, [contacts, ownerFilter, tagFilter, temperatureFilter]);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, contactId: string) => {
         setDraggedItemId(contactId);
         e.dataTransfer.effectAllowed = 'move';
     };
     
-    const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    const handleDragEnd = () => {
         setDraggedItemId(null);
         setDragOverStage(null);
     };
@@ -351,21 +327,40 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
 
     const handleDragLeave = () => setDragOverStage(null);
     
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>, stage: CrmContact['pipeline_stage']) => {
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>, newStage: CrmContact['pipeline_stage']) => {
         e.preventDefault();
         setDragOverStage(null);
 
-        if (currentUser.role === 'Atendente' && (stage === 'Fechado' || stage === 'Perdido')) {
+        if (currentUser.role === 'Atendente' && (newStage === 'Fechado' || newStage === 'Perdido')) {
             alert('Apenas gerentes podem mover contatos para "Fechado" ou "Perdido".');
             setDraggedItemId(null);
             return;
         }
 
         if (draggedItemId) {
+            let originalStage: CrmContact['pipeline_stage'] | undefined;
+
             setContacts(currentContacts => 
-                currentContacts.map(contact => 
-                    contact.id === draggedItemId ? { ...contact, pipeline_stage: stage, last_interaction: new Date().toISOString().split('T')[0] } : contact
-                )
+                currentContacts.map(contact => {
+                    if (contact.id === draggedItemId) {
+                        originalStage = contact.pipeline_stage;
+                        const stageChangeActivity: Activity = {
+                            id: `activity-${Date.now()}`,
+                            type: 'stage_change',
+                            text: `Etapa movida para ${newStage}`,
+                            author_id: currentUser.id,
+                            timestamp: new Date().toISOString(),
+                            metadata: { from: originalStage, to: newStage }
+                        };
+                        return { 
+                            ...contact, 
+                            pipeline_stage: newStage, 
+                            last_interaction: new Date().toISOString().split('T')[0],
+                            activities: [...contact.activities, stageChangeActivity]
+                        };
+                    }
+                    return contact;
+                })
             );
         }
     };
@@ -374,32 +369,14 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
         setContacts(currentContacts => [newContact, ...currentContacts]);
     };
 
-    const handleSaveNote = (noteText: string) => {
-        if (!noteModalTarget) return;
-
-        const newNote: Note = {
-            id: `note-${Date.now()}`,
-            type: 'note',
-            text: noteText,
-            author_id: currentUser.id,
-            timestamp: new Date().toISOString(),
-        };
-
-        setContacts(currentContacts => currentContacts.map(contact => {
-            if (contact.id === noteModalTarget.id) {
-                return {
-                    ...contact,
-                    notes: [...(contact.notes || []), newNote],
-                };
-            }
-            return contact;
-        }));
-        setNoteModalTarget(null); // Close modal
+    const handleUpdateContact = (updatedContact: CrmContact) => {
+        setContacts(currentContacts => currentContacts.map(c => c.id === updatedContact.id ? updatedContact : c));
+        setDetailsModalTarget(null); // Close modal
     };
 
     return (
         <div>
-            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+            <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
                 <h1 className="text-3xl font-bold text-text-main dark:text-white">Funil CRM</h1>
                 {currentUser.role === 'Gerente' && (
                     <button 
@@ -410,9 +387,28 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
                     </button>
                 )}
             </div>
+             {/* Filters */}
+            <div className="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm mb-6 flex flex-wrap items-center gap-4">
+                 <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} className="p-2 bg-gray-100 dark:bg-gray-700 border-transparent rounded-lg text-sm">
+                    <option value="">Todos Responsáveis</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+                <select value={tagFilter} onChange={e => setTagFilter(e.target.value)} className="p-2 bg-gray-100 dark:bg-gray-700 border-transparent rounded-lg text-sm">
+                    <option value="">Todas as Tags</option>
+                    {allTags.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <select value={temperatureFilter} onChange={e => setTemperatureFilter(e.target.value)} className="p-2 bg-gray-100 dark:bg-gray-700 border-transparent rounded-lg text-sm">
+                    <option value="">Toda Temperatura</option>
+                    <option value="Quente">Quente</option>
+                    <option value="Morno">Morno</option>
+                    <option value="Frio">Frio</option>
+                </select>
+                <button onClick={() => {setOwnerFilter(''); setTagFilter(''); setTemperatureFilter('');}} className="text-sm text-text-secondary dark:text-gray-400 hover:text-primary">Limpar Filtros</button>
+            </div>
+
             <div className="flex space-x-6 overflow-x-auto pb-4">
                 {pipelineStages.map(stage => {
-                    const stageContacts = contacts.filter(c => c.pipeline_stage === stage);
+                    const stageContacts = filteredContacts.filter(c => c.pipeline_stage === stage);
                     return (
                         <Column 
                             key={stage} 
@@ -427,7 +423,7 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
                             onDragOver={(e) => handleDragOver(e, stage)}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            onAddNoteClick={setNoteModalTarget}
+                            onOpenDetails={setDetailsModalTarget}
                             onNavigateToChat={onNavigateToChat}
                             onSendEmail={onSendEmail}
                         />
@@ -440,12 +436,14 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
                 onAdd={handleAddContact}
                 users={users}
             />
-            {noteModalTarget && (
-                <AddNoteModal
-                    contact={noteModalTarget}
+            {detailsModalTarget && (
+                <ContactDetailModal
+                    contact={detailsModalTarget}
+                    isOpen={!!detailsModalTarget}
+                    onClose={() => setDetailsModalTarget(null)}
+                    onSave={handleUpdateContact}
                     currentUser={currentUser}
-                    onClose={() => setNoteModalTarget(null)}
-                    onSave={handleSaveNote}
+                    userMap={userMap}
                 />
             )}
         </div>
