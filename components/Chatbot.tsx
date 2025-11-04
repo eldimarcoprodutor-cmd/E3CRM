@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import type { KnowledgeBaseItem, ChatbotConfig } from '../types.ts';
-import { supabase } from '../services/supabase.ts';
 
 // Define a modal component for adding/editing knowledge base items
 const KnowledgeItemModal: React.FC<{
@@ -116,6 +115,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ knowledgeBase, setKnowledgeBase }) =>
     };
     
     const handleSaveItem = async (item: Omit<KnowledgeBaseItem, 'id'> & { id?: number }) => {
+        const { supabase } = await import('../services/supabase.ts');
         if (item.id) { // Editing existing item
             const { data, error } = await supabase
                 .from('knowledge_base')
@@ -140,6 +140,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ knowledgeBase, setKnowledgeBase }) =>
     
     const handleDeleteItem = async (itemId: number) => {
         if(window.confirm("Tem certeza que deseja remover este item?")) {
+            const { supabase } = await import('../services/supabase.ts');
             const { error } = await supabase.from('knowledge_base').delete().eq('id', itemId);
             if (!error) {
                 setKnowledgeBase(knowledgeBase.filter(item => item.id !== itemId));

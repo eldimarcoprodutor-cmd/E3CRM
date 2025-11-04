@@ -174,7 +174,7 @@ const App: React.FC = () => {
         }, 5000); // Simulate after 5 seconds
     
         return () => clearTimeout(timer);
-    }, [setChats]); // Run only once on mount
+    }, []); // Run only once on mount
 
     // Effect to automatically create CRM contacts from new chats
     useEffect(() => {
@@ -207,7 +207,7 @@ const App: React.FC = () => {
         if (newContactsToCreate.length > 0) {
             setCrmContacts(currentContacts => [...currentContacts, ...newContactsToCreate]);
         }
-    }, [chats, crmContacts, setCrmContacts]); // Re-run when chats list changes
+    }, [chats, crmContacts]); // Re-run when chats list changes
 
 
     useEffect(() => {
@@ -219,7 +219,7 @@ const App: React.FC = () => {
         setKnowledgeBase(kbData || []);
       };
       fetchInitialData();
-    }, [setQuickReplies, setKnowledgeBase]);
+    }, []);
     
     // Effect to handle bot responses to customer messages
     useEffect(() => {
@@ -278,7 +278,7 @@ const App: React.FC = () => {
 
         const responseTimer = setTimeout(processBotResponses, 2000); // Add a small delay
         return () => clearTimeout(responseTimer);
-    }, [chats, knowledgeBase, setChats]);
+    }, [chats, knowledgeBase]);
 
     const handleNavigateToChat = (contact: CrmContact) => {
         const existingChat = chats.find(chat => chat.contact_id === contact.id);
@@ -327,7 +327,7 @@ const App: React.FC = () => {
             return chat;
         }));
 
-    }, [currentUser, setChats]);
+    }, [currentUser]);
 
     const handleTakeOverChat = (chatId: string) => {
         if (!currentUser) return;
@@ -454,6 +454,7 @@ const App: React.FC = () => {
                             currentUser={currentUser} 
                             onDeleteContact={handleDeleteContact} 
                             onSendEmail={setEmailTarget}
+                            users={users}
                         />;
             case 'scheduling':
                 return <Scheduling contacts={crmContacts} />;

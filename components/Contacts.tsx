@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { CrmContact, User } from '../types.ts';
 import { ContactDetailModal } from './ContactDetailModal.tsx';
 
@@ -8,6 +8,7 @@ interface ContactsProps {
     currentUser: User;
     onDeleteContact: (contactId: string) => void;
     onSendEmail: (contact: CrmContact) => void;
+    users: User[];
 }
 
 // Modal for adding a new contact
@@ -65,10 +66,12 @@ const AddContactModal: React.FC<{
 };
 
 
-const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser, onDeleteContact, onSendEmail }) => {
+const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser, onDeleteContact, onSendEmail, users }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
+
+    const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
 
     const filteredContacts = contacts.filter(contact =>
         contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -168,7 +171,7 @@ const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser,
                     onSave={handleSaveContact}
                     currentUser={currentUser}
                     onDelete={onDeleteContact}
-                    userMap={new Map()}
+                    userMap={userMap}
                 />
             )}
         </div>
