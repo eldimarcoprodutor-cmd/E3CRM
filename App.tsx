@@ -27,13 +27,17 @@ const usersData: User[] = [
     { id: '1', name: 'Ana Silva', avatar_url: 'https://i.pravatar.cc/150?u=1', role: 'Gerente', email: 'ana.gerente@zapcrm.com', password: 'password' },
     { id: '2', name: 'Bruno Gomes', avatar_url: 'https://i.pravatar.cc/150?u=2', role: 'Atendente', email: 'bruno.atendente@zapcrm.com', password: 'password' },
     { id: '3', name: 'Carla Dias', avatar_url: 'https://i.pravatar.cc/150?u=3', role: 'Atendente', email: 'carla.atendente@zapcrm.com', password: 'password' },
+    { id: '4', name: 'Daniel Martins', avatar_url: 'https://i.pravatar.cc/150?u=4', role: 'Atendente', email: 'daniel.atendente@zapcrm.com', password: 'password' },
+    { id: '5', name: 'Fernanda Lima', avatar_url: 'https://i.pravatar.cc/150?u=5', role: 'Gerente', email: 'fernanda.gerente@zapcrm.com', password: 'password' },
 ];
 
 const crmContactsData: CrmContact[] = [
     { id: '101', name: 'Carlos Pereira', email: 'carlos.p@example.com', phone: '+55 11 98765-4321', avatar_url: 'https://i.pravatar.cc/150?u=101', tags: ['cliente-vip', 'e-commerce'], pipeline_stage: 'Fechado', last_interaction: '2024-07-20', owner_id: '2', value: 1500, temperature: 'Quente', next_action_date: '2024-07-25', lead_source: 'Indicação', activities: [] },
     { id: '102', name: 'Mariana Costa', email: 'mari.costa@example.com', phone: '+55 21 91234-5678', avatar_url: 'https://i.pravatar.cc/150?u=102', tags: ['e-commerce', 'newsletter'], pipeline_stage: 'Proposta', last_interaction: '2024-07-22', owner_id: '2', value: 3200, temperature: 'Morno', next_action_date: '2024-07-28', lead_source: 'Website', activities: [] },
     { id: '103', name: 'Tech Solutions Inc.', email: 'contato@techsolutions.com', phone: '+55 11 5555-1010', avatar_url: 'https://i.pravatar.cc/150?u=103', tags: ['B2B', 'parceria'], pipeline_stage: 'Qualificação', last_interaction: '2024-07-21', owner_id: '3', value: 12500, temperature: 'Quente', next_action_date: '2024-07-20', lead_source: 'Evento', activities: [] },
-    { id: '104', name: 'João Almeida', email: 'joao.a@example.net', phone: '+55 81 99999-8888', avatar_url: 'https://i.pravatar.cc/150?u=104', tags: ['lead-frio'], pipeline_stage: 'Contato', last_interaction: '2024-07-15', owner_id: '3', value: 500, temperature: 'Frio', next_action_date: '2024-08-01', lead_source: 'Anúncio Facebook', activities: [] },
+    { id: '104', name: 'João Almeida', email: 'joao.a@example.net', phone: '+55 81 99999-8888', avatar_url: 'https://i.pravatar.cc/150?u=104', tags: ['lead-frio'], pipeline_stage: 'Contato', last_interaction: '2024-07-15', owner_id: '4', value: 500, temperature: 'Frio', next_action_date: '2024-08-01', lead_source: 'Anúncio Facebook', activities: [] },
+    { id: '105', name: 'Global Corp', email: 'financeiro@globalcorp.com', phone: '+55 41 3333-4444', avatar_url: 'https://i.pravatar.cc/150?u=105', tags: ['B2B', 'contrato-assinado'], pipeline_stage: 'Fechado', last_interaction: '2024-07-18', owner_id: '5', value: 50000, temperature: 'Quente', next_action_date: '2024-07-25', lead_source: 'Website', activities: [] },
+    { id: '106', name: 'Padaria Pão Quente', email: 'paoquente@email.com', phone: '+55 71 98888-7777', avatar_url: 'https://i.pravatar.cc/150?u=106', tags: ['pequeno-negocio'], pipeline_stage: 'Proposta', last_interaction: '2024-07-23', owner_id: '4', value: 800, temperature: 'Morno', next_action_date: '2024-07-30', lead_source: 'Indicação', activities: [] },
 ];
 
 const initialChats: Chat[] = [
@@ -64,7 +68,30 @@ const initialChats: Chat[] = [
             { id: 'msg2-2', chat_id: 'chat2', sender: 'bot', text: 'Olá, João! Temos os planos Básico, Profissional e Enterprise. Qual deles te interessa mais?', avatar_url: '/bot.png', timestamp: '09:16', type: 'text' },
         ],
     },
+     {
+        id: 'chat3',
+        contact_id: '106',
+        contact_name: 'Padaria Pão Quente',
+        avatar_url: 'https://i.pravatar.cc/150?u=106',
+        last_message: 'Gostaria de saber mais sobre o plano para pequenos negócios.',
+        timestamp: '11:45',
+        unread_count: 1,
+        handled_by: '4', // Handled by Daniel
+        messages: [
+            { id: 'msg3-1', chat_id: 'chat3', sender: '106', text: 'Gostaria de saber mais sobre o plano para pequenos negócios.', avatar_url: 'https://i.pravatar.cc/150?u=106', timestamp: '11:45', type: 'text' },
+        ],
+    },
 ];
+
+const LoadingIndicator: React.FC<{ message: string }> = ({ message }) => (
+    <div className="flex items-center justify-center h-full text-text-secondary dark:text-gray-400">
+        <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>{message}</span>
+    </div>
+);
 
 const App: React.FC = () => {
     const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -327,7 +354,7 @@ const App: React.FC = () => {
             return chat;
         }));
 
-    }, [currentUser]);
+    }, [currentUser, setChats]);
 
     const handleTakeOverChat = (chatId: string) => {
         if (!currentUser) return;
@@ -395,7 +422,7 @@ const App: React.FC = () => {
         }
         switch (activeView) {
             case 'dashboard':
-                return <Dashboard contacts={visibleCrmContacts} users={users} />;
+                return <Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users} /></Suspense>;
             case 'whatsapp':
                 if (channels.length === 0) {
                     return (
@@ -411,85 +438,89 @@ const App: React.FC = () => {
                         </div>
                     );
                 }
-                return whatsAppViewMode === 'integrado' ? (
-                     <WhatsAppCrm 
-                        currentUser={currentUser}
-                        chats={visibleChats}
-                        setChats={setChats}
-                        onSendMessage={handleSendMessage}
-                        users={users}
-                        quickReplies={quickReplies}
-                        crmContacts={crmContacts}
-                        setCrmContacts={setCrmContacts}
-                        onTakeOverChat={handleTakeOverChat}
-                        activeChatId={activeChatId}
-                        setActiveChatId={setActiveChatId}
-                    />
-                ) : (
-                    <WhatsAppWeb 
-                        currentUser={currentUser}
-                        chats={visibleChats}
-                        setChats={setChats}
-                        onSendMessage={handleSendMessage}
-                        users={users}
-                        quickReplies={quickReplies}
-                        onTakeOverChat={handleTakeOverChat}
-                        activeChatId={activeChatId}
-                        setActiveChatId={setActiveChatId}
-                    />
+                return (
+                    <Suspense fallback={<LoadingIndicator message="Carregando Atendimento..." />}>
+                        {whatsAppViewMode === 'integrado' ? (
+                            <WhatsAppCrm 
+                                currentUser={currentUser}
+                                chats={visibleChats}
+                                setChats={setChats}
+                                onSendMessage={handleSendMessage}
+                                users={users}
+                                quickReplies={quickReplies}
+                                crmContacts={crmContacts}
+                                setCrmContacts={setCrmContacts}
+                                onTakeOverChat={handleTakeOverChat}
+                                activeChatId={activeChatId}
+                                setActiveChatId={setActiveChatId}
+                            />
+                        ) : (
+                            <WhatsAppWeb 
+                                currentUser={currentUser}
+                                chats={visibleChats}
+                                setChats={setChats}
+                                onSendMessage={handleSendMessage}
+                                users={users}
+                                quickReplies={quickReplies}
+                                onTakeOverChat={handleTakeOverChat}
+                                activeChatId={activeChatId}
+                                setActiveChatId={setActiveChatId}
+                            />
+                        )}
+                    </Suspense>
                 );
             case 'crm-board':
-                return <CrmBoard 
+                return <Suspense fallback={<LoadingIndicator message="Carregando Funil CRM..." />}><CrmBoard 
                             contacts={visibleCrmContacts} 
                             setContacts={setCrmContacts} 
                             users={users} 
                             currentUser={currentUser} 
                             onNavigateToChat={handleNavigateToChat}
                             onSendEmail={setEmailTarget}
-                        />;
+                        /></Suspense>;
             case 'contacts':
-                return <Contacts 
+                return <Suspense fallback={<LoadingIndicator message="Carregando Contatos..." />}><Contacts 
                             contacts={visibleCrmContacts} 
                             setContacts={setCrmContacts} 
                             currentUser={currentUser} 
                             onDeleteContact={handleDeleteContact} 
                             onSendEmail={setEmailTarget}
                             users={users}
-                        />;
+                        /></Suspense>;
             case 'scheduling':
-                return <Scheduling contacts={crmContacts} />;
+                return <Suspense fallback={<LoadingIndicator message="Carregando Agendamentos..." />}><Scheduling contacts={crmContacts} /></Suspense>;
             case 'broadcast':
-                return <Broadcast />;
+                return <Suspense fallback={<LoadingIndicator message="Carregando Broadcast..." />}><Broadcast /></Suspense>;
             case 'reports':
-                return <Reports users={users} chats={chats} />;
+                return <Suspense fallback={<LoadingIndicator message="Carregando Relatórios..." />}><Reports users={users} chats={chats} /></Suspense>;
             case 'chatbot':
-                return <Chatbot knowledgeBase={knowledgeBase} setKnowledgeBase={setKnowledgeBase} />;
+                return <Suspense fallback={<LoadingIndicator message="Carregando Configurações do Chatbot..." />}><Chatbot knowledgeBase={knowledgeBase} setKnowledgeBase={setKnowledgeBase} /></Suspense>;
             case 'channels':
-                return <Canais channels={channels} setChannels={setChannels} />;
+                return <Suspense fallback={<LoadingIndicator message="Carregando Canais..." />}><Canais channels={channels} setChannels={setChannels} /></Suspense>;
             case 'team':
-                return <Team team={users} setTeam={setUsers} currentUser={currentUser} />;
+                return <Suspense fallback={<LoadingIndicator message="Carregando Equipe..." />}><Team team={users} setTeam={setUsers} currentUser={currentUser} /></Suspense>;
             case 'logs':
-                return <Logs users={users} />;
+                return <Suspense fallback={<LoadingIndicator message="Carregando Logs..." />}><Logs users={users} /></Suspense>;
             case 'profile':
-                return <Profile 
+                return <Suspense fallback={<LoadingIndicator message="Carregando Perfil..." />}><Profile 
                             currentUser={currentUser}
                             setCurrentUser={setCurrentUser}
                             users={users}
                             setUsers={setUsers}
-                        />;
+                        /></Suspense>;
             case 'settings':
-                return <Settings 
+                return <Suspense fallback={<LoadingIndicator message="Carregando Configurações..." />}><Settings 
                             quickReplies={quickReplies} 
                             setQuickReplies={setQuickReplies} 
-                        />;
+                        /></Suspense>;
             default:
-                return <Dashboard contacts={visibleCrmContacts} users={users}/>;
+                return <Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users}/></Suspense>;
         }
     };
 
     if (!currentUser) {
          return (
-            <Suspense fallback={<div className="flex items-center justify-center h-full bg-background-main dark:bg-gray-900 text-text-secondary">Carregando...</div>}>
+            <Suspense fallback={<LoadingIndicator message="Carregando..." />}>
                 <Login users={users} onLoginSuccess={setCurrentUser} />
             </Suspense>
         );
@@ -518,16 +549,16 @@ const App: React.FC = () => {
                     onLogout={handleLogout}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-                    <Suspense fallback={<div className="flex items-center justify-center h-full text-text-secondary">Carregando visualização...</div>}>
-                        {renderActiveView()}
-                         {emailTarget && (
+                    {renderActiveView()}
+                    {emailTarget && (
+                        <Suspense fallback={null}>
                             <EmailComposerModal
                                 contact={emailTarget}
                                 onClose={() => setEmailTarget(null)}
                                 onSend={handleSendEmail}
                             />
-                        )}
-                    </Suspense>
+                        </Suspense>
+                    )}
                 </main>
             </div>
         </div>
