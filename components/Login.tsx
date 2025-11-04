@@ -7,7 +7,7 @@ interface LoginProps {
     onLoginSuccess: (user: User) => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ users, onLoginSuccess }) => {
+const Login: React.FC<LoginProps> = ({ users, onLoginSuccess }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -90,3 +90,5 @@ export const Login: React.FC<LoginProps> = ({ users, onLoginSuccess }) => {
         </div>
     );
 };
+
+export default Login;

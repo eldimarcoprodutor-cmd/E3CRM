@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import type { QuickReply } from '../types.ts';
-import { supabase } from '../services/supabase.ts';
 
 // Modal for adding/editing quick replies
 const QuickReplyModal: React.FC<{
@@ -92,6 +91,7 @@ const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplies }) =>
     };
 
     const handleSaveReply = async (reply: Omit<QuickReply, 'id'> & { id?: number }) => {
+        const { supabase } = await import('../services/supabase.ts');
         if (reply.id) { // Editing
             const { data, error } = await supabase
                 .from('quick_replies')
@@ -115,6 +115,7 @@ const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplies }) =>
 
     const handleDeleteReply = async (replyId: number) => {
         if (window.confirm("Tem certeza que deseja remover esta resposta rápida?")) {
+            const { supabase } = await import('../services/supabase.ts');
             const { error } = await supabase.from('quick_replies').delete().eq('id', replyId);
             if (!error) {
                 setQuickReplies(quickReplies.filter(qr => qr.id !== replyId));

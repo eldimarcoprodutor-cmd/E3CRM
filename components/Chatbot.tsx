@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { generateChatbotResponse } from '../services/geminiService.ts';
 import type { KnowledgeBaseItem, ChatbotConfig } from '../types.ts';
 import { supabase } from '../services/supabase.ts';
 
@@ -101,6 +100,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ knowledgeBase, setKnowledgeBase }) =>
         setTestResponse('');
         const config: ChatbotConfig = { tone, knowledgeBase };
         try {
+            const { generateChatbotResponse } = await import('../services/geminiService.ts');
             const result = await generateChatbotResponse(testInput, config);
             setTestResponse(result.response + (result.requiresHandoff ? ' (HANDOFF REQUERIDO)' : ''));
         } catch (error) {

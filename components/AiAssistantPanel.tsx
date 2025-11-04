@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { AgentAiMessage, User, Chat, CrmContact } from '../types.ts';
-import { askAiChatbot, generateChatSummary, suggestNextAction } from '../services/geminiService.ts';
 
 interface AiAssistantPanelProps {
     currentUser: User;
@@ -47,6 +46,7 @@ export const AiAssistantPanel: React.FC<AiAssistantPanelProps> = ({ currentUser,
             setIsLoading(true);
 
             try {
+                const { askAiChatbot } = await import('../services/geminiService.ts');
                 const response = await askAiChatbot(userMessage, crmContacts, currentUser);
                 addMessage('bot', response.text);
                 if (response.updatedContacts) {
@@ -66,6 +66,7 @@ export const AiAssistantPanel: React.FC<AiAssistantPanelProps> = ({ currentUser,
         const chatHistory = currentChat.messages.map(m => `${m.sender === currentUser.id ? 'Atendente' : 'Cliente'}: ${m.text}`).join('\n');
         
         try {
+            const { generateChatSummary, suggestNextAction } = await import('../services/geminiService.ts');
             let responseText = '';
             if (action === 'summary') {
                 responseText = await generateChatSummary(chatHistory);

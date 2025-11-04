@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { Chat, Message, User, QuickReply, Sentiment } from '../types.ts';
 import { ChatMessageComponent } from './ChatMessageComponent.tsx';
 import { ChatInputFooter } from './ChatInputFooter.tsx';
-import { generateReplySuggestion, analyzeSentiment } from '../services/geminiService.ts';
 import { BotIcon } from './icons/BotIcon.tsx';
 import { SentimentIndicator } from './SentimentIndicator.tsx';
 
@@ -23,6 +22,7 @@ const AiSuggestions: React.FC<{ chatHistory: string; onSuggestionClick: (text: s
         if(!chatHistory) return;
         const fetchSuggestions = async () => {
             setIsLoading(true);
+            const { generateReplySuggestion } = await import('../services/geminiService.ts');
             const result = await generateReplySuggestion(chatHistory);
             setSuggestions(result);
             setIsLoading(false);
@@ -85,6 +85,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chat, currentUser,
             // Only analyze if there are messages and the last one is from the customer
             if (lastMessage && lastMessage.sender !== currentUser.id) {
                 setSentiment('Analisando...');
+                const { analyzeSentiment } = await import('../services/geminiService.ts');
                 const result = await analyzeSentiment(chatHistoryString);
                 setSentiment(result);
             }

@@ -2,13 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
 import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel, Activity } from './types.ts';
-import { Login } from './components/Login.tsx';
 import { WhatsAppIcon } from './components/icons/WhatsAppIcon.tsx';
-import { generateChatbotResponse } from './services/geminiService.ts';
-import { supabase } from './services/supabase.ts';
-import { sendEmail } from './services/emailService.ts';
 
 // Lazy load components for code splitting
+const Login = lazy(() => import('./components/Login.tsx'));
 const Dashboard = lazy(() => import('./components/Dashboard.tsx'));
 const CrmBoard = lazy(() => import('./components/CrmBoard.tsx'));
 const WhatsAppWeb = lazy(() => import('./components/WhatsAppWeb.tsx'));
@@ -215,6 +212,7 @@ const App: React.FC = () => {
 
     useEffect(() => {
       const fetchInitialData = async () => {
+        const { supabase } = await import('./services/supabase.ts');
         const { data: qrData } = await supabase.from('quick_replies').select('*');
         setQuickReplies(qrData || []);
         const { data: kbData } = await supabase.from('knowledge_base').select('*');
@@ -236,6 +234,8 @@ const App: React.FC = () => {
             });
 
             if (chatsToProcess.length === 0) return;
+            
+            const { generateChatbotResponse } = await import('./services/geminiService.ts');
 
             for (const chat of chatsToProcess) {
                 const lastMessage = chat.messages[chat.messages.length - 1];
@@ -353,6 +353,7 @@ const App: React.FC = () => {
         console.log(`Simulating sending email to ${contact.email}...`);
 
         try {
+            const { sendEmail } = await import('./services/emailService.ts');
             const result = await sendEmail({ to: contact.email, subject, body });
             if (result.success) {
                 // Add a record of the email to the contact's activities
@@ -486,7 +487,11 @@ const App: React.FC = () => {
     };
 
     if (!currentUser) {
-         return <Login users={users} onLoginSuccess={setCurrentUser} />;
+         return (
+            <Suspense fallback={<div className="flex items-center justify-center h-full bg-background-main dark:bg-gray-900 text-text-secondary">Carregando...</div>}>
+                <Login users={users} onLoginSuccess={setCurrentUser} />
+            </Suspense>
+        );
     }
 
     return (

@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { generateHumanizedResponse, correctSpellingAndGrammar, expandText } from '../services/geminiService.ts';
 
 interface AiInputAssistantProps {
   text: string;
@@ -92,15 +91,15 @@ export const AiInputAssistant: React.FC<AiInputAssistantProps> = ({ text, setTex
                         {showTones && (
                             <div className="absolute left-full top-0 w-32 bg-white dark:bg-gray-700 rounded-lg shadow-xl border dark:border-gray-600">
                                 {tones.map(tone => (
-                                    <button key={tone} onClick={() => handleAction(() => generateHumanizedResponse(text, tone))} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    <button key={tone} onClick={() => handleAction(() => import('../services/geminiService.ts').then(s => s.generateHumanizedResponse(text, tone)))} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">
                                         {tone}
                                     </button>
                                 ))}
                             </div>
                         )}
                     </div>
-                    <button onClick={() => handleAction(() => correctSpellingAndGrammar(text))} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Corrigir Ortografia</button>
-                    <button onClick={() => handleAction(() => expandText(text))} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Expandir Texto</button>
+                    <button onClick={() => handleAction(() => import('../services/geminiService.ts').then(s => s.correctSpellingAndGrammar(text)))} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Corrigir Ortografia</button>
+                    <button onClick={() => handleAction(() => import('../services/geminiService.ts').then(s => s.expandText(text)))} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Expandir Texto</button>
                 </div>
             )}
             {error && <div className="absolute bottom-full right-0 mb-2 p-2 text-xs bg-red-100 text-red-700 rounded-md">{error}</div>}
