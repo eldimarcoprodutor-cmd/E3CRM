@@ -5,7 +5,7 @@ import { ChatIcon } from './icons/ChatIcon.tsx';
 interface LoginProps {
     users: User[];
     onLoginSuccess: (user: User) => void;
-    onSignUp: (name: string, email: string, password: string) => { success: boolean, error?: string };
+    onSignUp: (name: string, email: string, password: string) => Promise<{ success: boolean, error?: string }>;
 }
 
 const Login: React.FC<LoginProps> = ({ users, onLoginSuccess, onSignUp }) => {
@@ -33,7 +33,7 @@ const Login: React.FC<LoginProps> = ({ users, onLoginSuccess, onSignUp }) => {
         }
     };
     
-    const handleSignUpSubmit = (e: React.FormEvent) => {
+    const handleSignUpSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
     
@@ -42,7 +42,7 @@ const Login: React.FC<LoginProps> = ({ users, onLoginSuccess, onSignUp }) => {
             return;
         }
     
-        const result = onSignUp(name, email, password);
+        const result = await onSignUp(name, email, password);
         if (!result.success) {
             setError(result.error || 'Não foi possível criar a conta.');
         }
