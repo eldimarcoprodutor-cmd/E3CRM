@@ -1,13 +1,12 @@
-
-
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
-import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel } from './types.ts';
+import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel, Note } from './types.ts';
 import { Login } from './components/Login.tsx';
 import { WhatsAppIcon } from './components/icons/WhatsAppIcon.tsx';
 import { generateChatbotResponse } from './services/geminiService.ts';
 import { supabase } from './services/supabase.ts';
+import { sendEmail } from './services/emailService.ts';
 
 // Lazy load components for code splitting
 const Dashboard = lazy(() => import('./components/Dashboard.tsx'));
@@ -24,6 +23,7 @@ const WhatsAppCrm = lazy(() => import('./components/WhatsAppCrm.tsx'));
 const Logs = lazy(() => import('./components/Logs.tsx'));
 const Canais = lazy(() => import('./components/Canais.tsx'));
 const Profile = lazy(() => import('./components/Profile.tsx'));
+const EmailComposerModal = lazy(() => import('./components/EmailComposerModal.tsx'));
 
 // Mock Data
 const usersData: User[] = [
@@ -81,6 +81,7 @@ const App: React.FC = () => {
     const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseItem[]>([]);
     const [whatsAppViewMode, setWhatsAppViewMode] = useState<'integrado' | 'classico'>('integrado');
     const [channels, setChannels] = useState<Channel[]>([]);
+    const [emailTarget, setEmailTarget] = useState<CrmContact | null>(null);
     const [theme, setTheme] = useState<Theme>(() => {
         return (localStorage.getItem('theme') as Theme) || 'system';
     });
@@ -327,7 +328,7 @@ const App: React.FC = () => {
         }));
 
     }, [currentUser]);
-    
+
     const handleTakeOverChat = (chatId: string) => {
         if (!currentUser) return;
         setChats(currentChats => currentChats.map(chat =>
@@ -344,6 +345,41 @@ const App: React.FC = () => {
             setCrmContacts(prev => prev.filter(c => c.id !== contactId));
             // Optional: also remove associated chats
             setChats(prev => prev.filter(c => c.contact_id !== contactId));
+        }
+    };
+    
+    const handleSendEmail = async (contact: CrmContact, subject: string, body: string) => {
+        if (!currentUser) return;
+        console.log(`Simulating sending email to ${contact.email}...`);
+
+        try {
+            const result = await sendEmail({ to: contact.email, subject, body });
+            if (result.success) {
+                // Add a record of the email to the contact's notes
+                const emailNote: Note = {
+                    id: `email-${Date.now()}`,
+                    type: 'email',
+                    subject: subject,
+                    text: body,
+                    author_id: currentUser.id,
+                    timestamp: new Date().toISOString(),
+                };
+
+                setCrmContacts(currentContacts =>
+                    currentContacts.map(c =>
+                        c.id === contact.id
+                            ? { ...c, notes: [...c.notes, emailNote] }
+                            : c
+                    )
+                );
+                alert('Email enviado com sucesso!');
+                setEmailTarget(null); // Close the modal
+            } else {
+                alert('Falha ao enviar o email.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Ocorreu um erro ao enviar o email.');
         }
     };
 
@@ -382,7 +418,7 @@ const App: React.FC = () => {
                         onSendMessage={handleSendMessage}
                         users={users}
                         quickReplies={quickReplies}
-                        crmContacts={visibleCrmContacts}
+                        crmContacts={crmContacts}
                         setCrmContacts={setCrmContacts}
                         onTakeOverChat={handleTakeOverChat}
                         activeChatId={activeChatId}
@@ -402,9 +438,22 @@ const App: React.FC = () => {
                     />
                 );
             case 'crm-board':
-                return <CrmBoard contacts={visibleCrmContacts} setContacts={setCrmContacts} users={users} currentUser={currentUser} onNavigateToChat={handleNavigateToChat} />;
+                return <CrmBoard 
+                            contacts={visibleCrmContacts} 
+                            setContacts={setCrmContacts} 
+                            users={users} 
+                            currentUser={currentUser} 
+                            onNavigateToChat={handleNavigateToChat}
+                            onSendEmail={setEmailTarget}
+                        />;
             case 'contacts':
-                return <Contacts contacts={visibleCrmContacts} setContacts={setCrmContacts} currentUser={currentUser} onDeleteContact={handleDeleteContact} />;
+                return <Contacts 
+                            contacts={visibleCrmContacts} 
+                            setContacts={setCrmContacts} 
+                            currentUser={currentUser} 
+                            onDeleteContact={handleDeleteContact} 
+                            onSendEmail={setEmailTarget}
+                        />;
             case 'scheduling':
                 return <Scheduling contacts={crmContacts} />;
             case 'broadcast':
@@ -465,6 +514,13 @@ const App: React.FC = () => {
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
                     <Suspense fallback={<div className="flex items-center justify-center h-full text-text-secondary">Carregando visualização...</div>}>
                         {renderActiveView()}
+                         {emailTarget && (
+                            <EmailComposerModal
+                                contact={emailTarget}
+                                onClose={() => setEmailTarget(null)}
+                                onSend={handleSendEmail}
+                            />
+                        )}
                     </Suspense>
                 </main>
             </div>

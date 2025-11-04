@@ -100,7 +100,6 @@ const Team: React.FC<TeamProps> = ({ team, setTeam, currentUser }) => {
         if (memberData.id) { // Editing
             setTeam(team.map(m => (m.id === memberData.id ? { ...m, ...memberData } as User : m)));
         } else { // Adding
-            // Fix: Add missing 'email' and 'password' properties to the new User object.
             const newMember: User = {
                 id: `user-${Date.now()}`,
                 name: memberData.name,

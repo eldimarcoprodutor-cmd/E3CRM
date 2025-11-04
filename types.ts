@@ -17,6 +17,19 @@ export interface Message {
   type: 'text' | 'internal';
 }
 
+export interface AiChatMessage {
+  id: string;
+  text: string;
+  sender: 'user' | 'bot';
+}
+
+export interface AgentAiMessage {
+  id: string;
+  text: string;
+  sender: 'user' | 'bot';
+  isActionResponse?: boolean;
+}
+
 export interface Chat {
   id: string;
   contact_id: string;
@@ -34,6 +47,8 @@ export interface Note {
   text: string;
   author_id: string;
   timestamp: string;
+  type: 'note' | 'email';
+  subject?: string;
 }
 
 export interface CrmContact {
@@ -50,7 +65,7 @@ export interface CrmContact {
   temperature: 'Quente' | 'Morno' | 'Frio';
   next_action_date: string; // ISO format YYYY-MM-DD
   lead_source: string;
-  notes?: Note[];
+  notes: Note[];
 }
 
 export interface QuickReply {
@@ -87,3 +102,10 @@ export interface Channel {
   number: string;
   status: 'Conectado' | 'Desconectado' | 'Conectando';
 }
+
+export interface AiChatbotResponse {
+    text: string;
+    updatedContacts?: CrmContact[];
+}
+
+export type Sentiment = 'Positivo' | 'Neutro' | 'Negativo' | 'Analisando...';

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import type { CrmContact, User } from '../types.ts';
+import { EmailIcon } from './icons/EmailIcon.tsx';
 
 interface ContactsProps {
     contacts: CrmContact[];
     setContacts: React.Dispatch<React.SetStateAction<CrmContact[]>>;
     currentUser: User;
     onDeleteContact: (contactId: string) => void;
+    onSendEmail: (contact: CrmContact) => void;
 }
 
 // Modal for adding a new contact
@@ -185,7 +187,7 @@ const ContactDetailsModal: React.FC<{
     );
 };
 
-const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser, onDeleteContact }) => {
+const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser, onDeleteContact, onSendEmail }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
@@ -264,7 +266,8 @@ const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser,
                                             ))}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 flex items-center space-x-4">
+                                        <button onClick={() => onSendEmail(contact)} className="font-medium text-blue-600 dark:text-blue-500 hover:underline">Email</button>
                                         <button onClick={() => handleOpenDetails(contact)} className="font-medium text-primary dark:text-primary hover:underline">Detalhes</button>
                                     </td>
                                 </tr>

@@ -59,7 +59,6 @@ const WhatsAppCrm: React.FC<WhatsAppCrmProps> = ({ currentUser, chats, setChats,
     );
     
     const activeChat = useMemo(() => chats.find(c => c.id === activeChatId), [chats, activeChatId]);
-    const activeCrmContact = useMemo(() => crmContacts.find(c => c.id === activeChat?.contact_id), [crmContacts, activeChat]);
 
     return (
         <div className="flex h-full bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
@@ -90,7 +89,7 @@ const WhatsAppCrm: React.FC<WhatsAppCrmProps> = ({ currentUser, chats, setChats,
                     <ActiveChatView
                         key={activeChat.id}
                         chat={activeChat}
-                        crmContact={activeCrmContact}
+                        crmContacts={crmContacts}
                         currentUser={currentUser}
                         onSendMessage={onSendMessage}
                         users={users}

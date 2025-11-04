@@ -1,12 +1,10 @@
-
-
-
 import React, { useState, useRef, useEffect } from 'react';
-import type { Chat, Message, User, QuickReply } from '../types.ts';
+import type { Chat, Message, User, QuickReply, Sentiment } from '../types.ts';
 import { ChatMessageComponent } from './ChatMessageComponent.tsx';
 import { ChatInputFooter } from './ChatInputFooter.tsx';
-import { generateReplySuggestion } from '../services/geminiService.ts';
+import { generateReplySuggestion, analyzeSentiment } from '../services/geminiService.ts';
 import { BotIcon } from './icons/BotIcon.tsx';
+import { SentimentIndicator } from './SentimentIndicator.tsx';
 
 interface ChatInterfaceProps {
     chat: Chat;
@@ -68,14 +66,33 @@ const AiHandoffBanner: React.FC<{ onTakeOver: () => void }> = ({ onTakeOver }) =
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chat, currentUser, onSendMessage, users, quickReplies, onTakeOverChat }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [newMessage, setNewMessage] = useState('');
+    const [sentiment, setSentiment] = useState<Sentiment>('Analisando...');
+
+    const chatHistoryString = chat.messages
+        .filter(m => m.type === 'text')
+        .map(m => {
+            const senderName = m.sender === currentUser.id ? 'Atendente' : 'Cliente';
+            return `${senderName}: ${m.text}`;
+        }).join('\n');
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [chat.messages]);
+
+    useEffect(() => {
+        const performSentimentAnalysis = async () => {
+            const lastMessage = chat.messages[chat.messages.length - 1];
+            // Only analyze if there are messages and the last one is from the customer
+            if (lastMessage && lastMessage.sender !== currentUser.id) {
+                setSentiment('Analisando...');
+                const result = await analyzeSentiment(chatHistoryString);
+                setSentiment(result);
+            }
+        };
+
+        performSentimentAnalysis();
+    }, [chat.messages, currentUser.id, chatHistoryString]);
     
-    const chatHistoryString = chat.messages
-    .filter(m => m.type === 'text')
-    .map(m => `${m.sender === currentUser.id ? 'Atendente' : 'Cliente'}: ${m.text}`).join('\n');
 
     const handleSend = (type: 'text' | 'internal', text: string) => {
         if (text.trim()) {
@@ -98,7 +115,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chat, currentUser,
             <header className="flex items-center p-4 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm">
                 <img src={chat.avatar_url} alt={chat.contact_name} className="w-10 h-10 rounded-full" />
                 <div className="ml-4">
-                    <p className="font-bold text-text-main dark:text-white">{chat.contact_name}</p>
+                    <div className="flex items-center gap-3">
+                        <p className="font-bold text-text-main dark:text-white">{chat.contact_name}</p>
+                        <SentimentIndicator sentiment={sentiment} />
+                    </div>
                     <p className="text-xs text-status-success">Online</p>
                 </div>
             </header>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { CrmContact, User, Note } from '../types.ts';
+import { EmailIcon } from './icons/EmailIcon.tsx';
 
 interface CrmBoardProps {
     contacts: CrmContact[];
@@ -7,6 +8,7 @@ interface CrmBoardProps {
     users: User[];
     currentUser: User;
     onNavigateToChat: (contact: CrmContact) => void;
+    onSendEmail: (contact: CrmContact) => void;
 }
 
 const pipelineStages: CrmContact['pipeline_stage'][] = ['Contato', 'Qualificação', 'Proposta', 'Fechado', 'Perdido'];
@@ -34,10 +36,11 @@ interface CardProps {
     onDragEnd: (e: React.DragEvent<HTMLDivElement>) => void;
     onAddNoteClick: (contact: CrmContact) => void;
     onNavigateToChat: (contact: CrmContact) => void;
+    onSendEmail: (contact: CrmContact) => void;
 }
 
 
-const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, onDragStart, onDragEnd, onAddNoteClick, onNavigateToChat }) => {
+const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, onDragStart, onDragEnd, onAddNoteClick, onNavigateToChat, onSendEmail }) => {
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -86,7 +89,9 @@ const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, on
             {/* Latest Note */}
             {latestNote && (
                 <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-md text-xs">
-                    <p className="text-gray-800 dark:text-gray-200 truncate">{latestNote.text}</p>
+                    <p className="text-gray-800 dark:text-gray-200 truncate">
+                        {latestNote.type === 'email' ? `📧 Email: ${latestNote.subject}` : `📝 ${latestNote.text}`}
+                    </p>
                     <p className="text-text-secondary dark:text-gray-400 mt-1 text-right">
                         - {noteAuthor?.name.split(' ')[0] || '...'} em {new Date(latestNote.timestamp).toLocaleDateString('pt-BR')}
                     </p>
@@ -113,6 +118,9 @@ const Card: React.FC<CardProps> = ({ contact, owner, userMap, isBeingDragged, on
                 
                 {/* Quick Actions */}
                 <div className="flex items-center space-x-3 text-gray-400 dark:text-gray-500">
+                    <button onClick={(e) => handleActionClick(e, () => onSendEmail(contact))} className="hover:text-blue-500 transition-colors" title="Enviar Email">
+                        <EmailIcon className="h-5 w-5" />
+                    </button>
                     <button onClick={(e) => handleActionClick(e, () => onNavigateToChat(contact))} className="hover:text-status-success transition-colors" title="Enviar Mensagem">
                         <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 4.315 1.919 6.066l-1.225 4.485 4.625-1.217z" />
@@ -153,10 +161,11 @@ interface ColumnProps {
     onDrop: (e: React.DragEvent<HTMLDivElement>, stage: CrmContact['pipeline_stage']) => void;
     onAddNoteClick: (contact: CrmContact) => void;
     onNavigateToChat: (contact: CrmContact) => void;
+    onSendEmail: (contact: CrmContact) => void;
 }
 
 
-const Column: React.FC<ColumnProps> = ({ stage, contacts, users, userMap, isDragOver, draggedItemId, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop, onAddNoteClick, onNavigateToChat }) => {
+const Column: React.FC<ColumnProps> = ({ stage, contacts, users, userMap, isDragOver, draggedItemId, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop, onAddNoteClick, onNavigateToChat, onSendEmail }) => {
     const totalValue = useMemo(() => contacts.reduce((sum, contact) => sum + contact.value, 0), [contacts]);
 
     return (
@@ -189,6 +198,7 @@ const Column: React.FC<ColumnProps> = ({ stage, contacts, users, userMap, isDrag
                       onDragEnd={onDragEnd} 
                       onAddNoteClick={onAddNoteClick} 
                       onNavigateToChat={onNavigateToChat} 
+                      onSendEmail={onSendEmail}
                       isBeingDragged={draggedItemId === contact.id}
                     />
                 ))}
@@ -317,7 +327,7 @@ const AddNoteModal: React.FC<{
 };
 
 
-const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, currentUser, onNavigateToChat }) => {
+const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, currentUser, onNavigateToChat, onSendEmail }) => {
     const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
     const [dragOverStage, setDragOverStage] = useState<CrmContact['pipeline_stage'] | null>(null);
     const [isAddOppModalOpen, setAddOppModalOpen] = useState(false);
@@ -369,6 +379,7 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
 
         const newNote: Note = {
             id: `note-${Date.now()}`,
+            type: 'note',
             text: noteText,
             author_id: currentUser.id,
             timestamp: new Date().toISOString(),
@@ -418,6 +429,7 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
                             onDrop={handleDrop}
                             onAddNoteClick={setNoteModalTarget}
                             onNavigateToChat={onNavigateToChat}
+                            onSendEmail={onSendEmail}
                         />
                     );
                 })}
