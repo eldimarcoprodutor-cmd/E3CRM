@@ -76,15 +76,14 @@ export const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ contact,
         e.preventDefault();
         if (!newNote.trim()) return;
 
-        const noteActivity: Activity = {
-            id: `activity-${Date.now()}`,
+        const noteActivity: Omit<Activity, 'id'> = {
             type: 'note',
             text: newNote,
             author_id: currentUser.id,
             timestamp: new Date().toISOString(),
         };
 
-        const updatedContact = { ...contact, activities: [...contact.activities, noteActivity] };
+        const updatedContact = { ...contact, activities: [...contact.activities, noteActivity as Activity] };
         onSave(updatedContact);
         setNewNote('');
     };

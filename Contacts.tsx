@@ -4,7 +4,7 @@ import { ContactDetailModal } from './ContactDetailModal.tsx';
 
 interface ContactsProps {
     contacts: CrmContact[];
-    onAddContact: (contact: CrmContact) => void;
+    onAddContact: (contact: Omit<CrmContact, 'id'>) => void;
     onUpdateContact: (contact: CrmContact) => void;
     currentUser: User;
     onDeleteContact: (contactId: string) => void;
@@ -16,7 +16,7 @@ interface ContactsProps {
 const AddContactModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (contact: CrmContact) => void;
+    onAdd: (contact: Omit<CrmContact, 'id'>) => void;
 }> = ({ isOpen, onClose, onAdd }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -27,8 +27,7 @@ const AddContactModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const newContact: CrmContact = {
-            id: `contact-${Date.now()}`,
+        const newContact: Omit<CrmContact, 'id'> = {
             name,
             email,
             phone,

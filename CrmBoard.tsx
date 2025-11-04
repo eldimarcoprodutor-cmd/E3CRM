@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { CrmContact, User, Activity } from '../types.ts';
+import type { CrmContact, User, Activity } from './types.ts';
 import { EmailIcon } from './icons/EmailIcon.tsx';
 import { ContactDetailModal } from './ContactDetailModal.tsx';
 
@@ -7,7 +7,7 @@ import { ContactDetailModal } from './ContactDetailModal.tsx';
 interface CrmBoardProps {
     contacts: CrmContact[];
     onUpdateContact: (contact: CrmContact) => void;
-    onAddContact: (contact: CrmContact) => void;
+    onAddContact: (contact: Omit<CrmContact, 'id'>) => void;
     users: User[];
     currentUser: User;
     onNavigateToChat: (contact: CrmContact) => void;
@@ -213,7 +213,7 @@ const Column: React.FC<ColumnProps> = ({ stage, contacts, users, userMap, isDrag
 const AddOpportunityModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (contact: CrmContact) => void;
+    onAdd: (contact: Omit<CrmContact, 'id'>) => void;
     users: User[];
 }> = ({ isOpen, onClose, onAdd, users }) => {
     const [name, setName] = useState('');
@@ -231,8 +231,7 @@ const AddOpportunityModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const newContact: CrmContact = {
-            id: `crm-${Date.now()}`,
+        const newContact: Omit<CrmContact, 'id'> = {
             name, email, phone, value,
             pipeline_stage: stage,
             owner_id: ownerId,
@@ -343,8 +342,7 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, onUpdateContact, onAddCon
 
             const originalStage = contactToMove.pipeline_stage;
     
-            const stageChangeActivity: Activity = {
-                id: `activity-${Date.now()}`,
+            const stageChangeActivity: Omit<Activity, 'id'> = {
                 type: 'stage_change',
                 text: `Etapa movida para ${newStage}`,
                 author_id: currentUser.id,
@@ -356,7 +354,7 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, onUpdateContact, onAddCon
                 ...contactToMove,
                 pipeline_stage: newStage,
                 last_interaction: new Date().toISOString().split('T')[0],
-                activities: [...contactToMove.activities, stageChangeActivity]
+                activities: [...contactToMove.activities, stageChangeActivity as Activity]
             };
 
             onUpdateContact(updatedContact);

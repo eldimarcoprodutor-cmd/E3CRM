@@ -11,7 +11,7 @@ interface WhatsAppCrmProps {
     users: User[];
     quickReplies: QuickReply[];
     crmContacts: CrmContact[];
-    setCrmContacts: React.Dispatch<React.SetStateAction<CrmContact[]>>;
+    onUpdateContact: (contact: CrmContact) => void;
     onTakeOverChat: (chatId: string) => void;
     activeChatId: string | null;
     setActiveChatId: (id: string | null) => void;
@@ -39,7 +39,7 @@ const ChatListItem: React.FC<{ chat: Chat; isActive: boolean; onClick: () => voi
     </button>
 );
 
-const WhatsAppCrm: React.FC<WhatsAppCrmProps> = ({ currentUser, chats, setChats, onSendMessage, users, quickReplies, crmContacts, setCrmContacts, onTakeOverChat, activeChatId, setActiveChatId }) => {
+const WhatsAppCrm: React.FC<WhatsAppCrmProps> = ({ currentUser, chats, setChats, onSendMessage, users, quickReplies, crmContacts, onUpdateContact, onTakeOverChat, activeChatId, setActiveChatId }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleSelectChat = (chatId: string) => {
@@ -95,7 +95,7 @@ const WhatsAppCrm: React.FC<WhatsAppCrmProps> = ({ currentUser, chats, setChats,
                         users={users}
                         quickReplies={quickReplies}
                         onTakeOverChat={onTakeOverChat}
-                        setCrmContacts={setCrmContacts}
+                        onUpdateContact={onUpdateContact}
                     />
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center bg-background-main dark:bg-gray-900">

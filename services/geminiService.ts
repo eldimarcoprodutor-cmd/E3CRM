@@ -70,7 +70,7 @@ const getAiChat = () => {
  * @param currentUser The currently logged-in user.
  * @returns The result of the function execution.
  */
-const executeFunctionCall = (functionCall: GenerateContentResponse['functionCalls'][0], contacts: CrmContact[], currentUser: User): { result: any, updatedContacts?: CrmContact[] } => {
+const executeFunctionCall = (functionCall: GenerateContentResponse['functionCalls'][0], contacts: CrmContact[], currentUser: User): { result: any, updatedContact?: CrmContact } => {
     const { name, args } = functionCall;
 
     switch (name) {
@@ -84,24 +84,17 @@ const executeFunctionCall = (functionCall: GenerateContentResponse['functionCall
         case 'addNoteToContact': {
             const contactName = args.contactName as string;
             const noteText = args.noteText as string;
-            let found = false;
-            const updatedContacts = contacts.map(c => {
-                if (c.name.toLowerCase() === contactName.toLowerCase()) {
-                    found = true;
-                    const newNote: Activity = {
-                        id: `note-${Date.now()}`,
-                        text: noteText,
-                        author_id: currentUser.id,
-                        timestamp: new Date().toISOString(),
-                        type: 'note',
-                    };
-                    return { ...c, activities: [...c.activities, newNote] };
-                }
-                return c;
-            });
+            const contactToUpdate = contacts.find(c => c.name.toLowerCase() === contactName.toLowerCase());
 
-            if (found) {
-                return { result: { success: true, message: 'Nota adicionada.' }, updatedContacts };
+            if (contactToUpdate) {
+                const newNote: Omit<Activity, 'id'> = {
+                    text: noteText,
+                    author_id: currentUser.id,
+                    timestamp: new Date().toISOString(),
+                    type: 'note',
+                };
+                const updatedContact = { ...contactToUpdate, activities: [...contactToUpdate.activities, newNote as Activity] };
+                return { result: { success: true, message: 'Nota adicionada.' }, updatedContact };
             }
             return { result: { success: false, error: `Contato "${contactName}" não encontrado.` } };
         }
@@ -109,7 +102,7 @@ const executeFunctionCall = (functionCall: GenerateContentResponse['functionCall
             const temperature = args.temperature as CrmContact['temperature'];
             const validTemperatures: CrmContact['temperature'][] = ['Quente', 'Morno', 'Frio'];
             if (!validTemperatures.includes(temperature)) {
-                return { result: { error: 'Temperatura inválida. Use Quente, Morno ou Frio.' } };
+                return { result: { error: 'Temperatura inválida. Use Quente, Morno, Frio.' } };
             }
             const leads = contacts.filter(c => c.temperature === temperature).map(c => c.name);
             return { result: { leads } };
@@ -131,7 +124,8 @@ export const askAiChatbot = async (message: string, contacts: CrmContact[], curr
         const chat = getAiChat();
         let response = await chat.sendMessage({ message });
 
-        let updatedContacts: CrmContact[] | undefined = undefined;
+        let contactThatWasUpdated: CrmContact | undefined = undefined;
+        let currentContacts = [...contacts]; // Make a copy to update during the loop
 
         while (response.functionCalls && response.functionCalls.length > 0) {
             const functionCalls = response.functionCalls;
@@ -139,9 +133,11 @@ export const askAiChatbot = async (message: string, contacts: CrmContact[], curr
             const functionResponseParts = [];
 
             for (const fc of functionCalls) {
-                const { result, updatedContacts: newContacts } = executeFunctionCall(fc, updatedContacts || contacts, currentUser);
-                if (newContacts) {
-                    updatedContacts = newContacts; // Capture the updated contacts list
+                const { result, updatedContact } = executeFunctionCall(fc, currentContacts, currentUser);
+                if (updatedContact) {
+                    contactThatWasUpdated = updatedContact; // Capture the updated contact
+                    // Update the list for the next function call in the same turn
+                    currentContacts = currentContacts.map(c => c.id === updatedContact.id ? updatedContact : c);
                 }
                 functionResponseParts.push({
                     functionResponse: {
@@ -155,7 +151,7 @@ export const askAiChatbot = async (message: string, contacts: CrmContact[], curr
             response = await chat.sendMessage({ parts: functionResponseParts });
         }
 
-        return { text: response.text, updatedContacts };
+        return { text: response.text, updatedContact: contactThatWasUpdated };
 
     } catch (error) {
         console.error("Error asking AI Chatbot:", error);

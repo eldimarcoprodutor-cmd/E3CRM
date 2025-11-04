@@ -110,7 +110,7 @@ export interface Channel {
 
 export interface AiChatbotResponse {
     text: string;
-    updatedContacts?: CrmContact[];
+    updatedContact?: CrmContact;
 }
 
 export type Sentiment = 'Positivo' | 'Neutro' | 'Negativo' | 'Analisando...';

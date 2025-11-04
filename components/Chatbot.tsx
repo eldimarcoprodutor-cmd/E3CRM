@@ -121,19 +121,21 @@ const Chatbot: React.FC<ChatbotProps> = ({ knowledgeBase, setKnowledgeBase }) =>
                 .from('knowledge_base')
                 .update({ question: item.question, answer: item.answer })
                 .eq('id', item.id)
-                .select();
+                .select()
+                .single();
 
             if (data && !error) {
-                setKnowledgeBase(knowledgeBase.map(kb => kb.id === item.id ? data[0] : kb));
+                setKnowledgeBase(knowledgeBase.map(kb => kb.id === item.id ? data : kb));
             }
         } else { // Adding new item
             const { data, error } = await supabase
                 .from('knowledge_base')
-                .insert({ question: item.question, answer: item.answer })
-                .select();
+                .insert([{ question: item.question, answer: item.answer }])
+                .select()
+                .single();
                 
             if (data && !error) {
-                setKnowledgeBase([...knowledgeBase, data[0]]);
+                setKnowledgeBase([...knowledgeBase, data]);
             }
         }
     };

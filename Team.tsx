@@ -3,14 +3,16 @@ import type { User } from '../types.ts';
 
 interface TeamProps {
     team: User[];
-    setTeam: (team: User[]) => void; // This would be replaced by async functions in full integration
     currentUser: User;
+    onAddUser: (user: Omit<User, 'id'>) => Promise<void>;
+    onUpdateUser: (user: User) => Promise<void>;
+    onDeleteUser: (userId: string) => Promise<void>;
 }
 
 const TeamMemberModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onSave: (member: Omit<User, 'id'> & { id?: string }) => void;
+    onSave: (member: Omit<User, 'id'> & { id?: string; password?: string }) => void;
     memberToEdit: User | null;
 }> = ({ isOpen, onClose, onSave, memberToEdit }) => {
     const [name, setName] = useState('');
@@ -45,7 +47,7 @@ const TeamMemberModal: React.FC<{
                 email,
                 avatar_url: avatarUrl,
                 role,
-                password: memberToEdit?.password,
+                password: memberToEdit?.password || 'password', // Default password for new users
             });
             onClose();
         }
@@ -87,7 +89,7 @@ const TeamMemberModal: React.FC<{
     );
 };
 
-const Team: React.FC<TeamProps> = ({ team, setTeam, currentUser }) => {
+const Team: React.FC<TeamProps> = ({ team, currentUser, onAddUser, onUpdateUser, onDeleteUser }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState<User | null>(null);
 
@@ -96,34 +98,29 @@ const Team: React.FC<TeamProps> = ({ team, setTeam, currentUser }) => {
         setIsModalOpen(true);
     };
 
-    const handleSave = (memberData: Omit<User, 'id'> & { id?: string }) => {
-        // TODO: In a real integration, this would call an async function prop
-        // that updates Supabase, then updates the local state in App.tsx.
+    const handleSave = async (memberData: Omit<User, 'id'> & { id?: string; password?: string }) => {
         if (memberData.id) { // Editing
-            setTeam(team.map(m => (m.id === memberData.id ? { ...m, ...memberData } as User : m)));
+            await onUpdateUser(memberData as User);
         } else { // Adding
-            const newMember: User = {
-                id: `user-${Date.now()}`,
+            const newUser: Omit<User, 'id'> = {
                 name: memberData.name,
                 email: memberData.email,
                 avatar_url: memberData.avatar_url || `https://i.pravatar.cc/150?u=${Date.now()}`,
                 role: memberData.role,
                 password: 'password'
             };
-            setTeam([newMember, ...team]);
+            await onAddUser(newUser);
         }
         setIsModalOpen(false);
     };
 
     const handleRemove = (userId: string) => {
-        // TODO: In a real integration, this would call an async function prop
-        // that deletes from Supabase, then updates the local state in App.tsx.
         if (userId === currentUser.id) {
             alert("Você não pode remover a si mesmo.");
             return;
         }
         if (window.confirm("Tem certeza que deseja remover este membro da equipe?")) {
-            setTeam(team.filter(member => member.id !== userId));
+            onDeleteUser(userId);
         }
     };
   

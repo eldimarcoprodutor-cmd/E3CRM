@@ -5,7 +5,7 @@ interface AiAssistantPanelProps {
     currentUser: User;
     currentChat: Chat;
     crmContacts: CrmContact[];
-    onContactsUpdate: (updater: (contacts: CrmContact[]) => CrmContact[]) => void;
+    onContactUpdate: (contact: CrmContact) => void;
 }
 
 const LoadingBubble: React.FC = () => (
@@ -23,7 +23,7 @@ const AiIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 
-export const AiAssistantPanel: React.FC<AiAssistantPanelProps> = ({ currentUser, currentChat, crmContacts, onContactsUpdate }) => {
+export const AiAssistantPanel: React.FC<AiAssistantPanelProps> = ({ currentUser, currentChat, crmContacts, onContactUpdate }) => {
     const [messages, setMessages] = useState<AgentAiMessage[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -49,8 +49,8 @@ export const AiAssistantPanel: React.FC<AiAssistantPanelProps> = ({ currentUser,
                 const { askAiChatbot } = await import('../services/geminiService.ts');
                 const response = await askAiChatbot(userMessage, crmContacts, currentUser);
                 addMessage('bot', response.text);
-                if (response.updatedContacts) {
-                    onContactsUpdate(() => response.updatedContacts!);
+                if (response.updatedContact) {
+                    onContactUpdate(response.updatedContact);
                 }
             } catch (error) {
                 console.error("AI Assistant Error:", error);

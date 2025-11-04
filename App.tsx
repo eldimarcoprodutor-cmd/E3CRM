@@ -2,24 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
 import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel, Activity } from './types.ts';
-import { WhatsAppIcon } from './components/icons/WhatsAppIcon.tsx';
+import MainContent from './MainContent.tsx';
 
 // Lazy load components for code splitting
 const Login = lazy(() => import('./components/Login.tsx'));
-const Dashboard = lazy(() => import('./components/Dashboard.tsx'));
-const CrmBoard = lazy(() => import('./components/CrmBoard.tsx'));
-const WhatsAppWeb = lazy(() => import('./components/WhatsAppWeb.tsx'));
-const Settings = lazy(() => import('./components/Settings.tsx'));
-const Scheduling = lazy(() => import('./components/Scheduling.tsx'));
-const Broadcast = lazy(() => import('./components/Broadcast.tsx'));
-const Reports = lazy(() => import('./components/Reports.tsx'));
-const Chatbot = lazy(() => import('./components/Chatbot.tsx'));
-const Contacts = lazy(() => import('./components/Contacts.tsx'));
-const Team = lazy(() => import('./components/Team.tsx'));
-const WhatsAppCrm = lazy(() => import('./components/WhatsAppCrm.tsx'));
-const Logs = lazy(() => import('./components/Logs.tsx'));
-const Canais = lazy(() => import('./components/Canais.tsx'));
-const Profile = lazy(() => import('./components/Profile.tsx'));
 const EmailComposerModal = lazy(() => import('./components/EmailComposerModal.tsx'));
 
 
@@ -59,16 +45,6 @@ const App: React.FC = () => {
     const handleSignUp = async (name: string, email: string, password: string): Promise<{ success: boolean, error?: string }> => {
         const { supabase } = await import('./services/supabase.ts');
         
-        const { data: existingUsers, error: checkError } = await supabase
-            .from('users')
-            .select('email')
-            .eq('email', email.toLowerCase());
-
-        if (checkError) return { success: false, error: 'Erro ao verificar o email.' };
-        if (existingUsers && existingUsers.length > 0) {
-            return { success: false, error: 'Este email já está em uso.' };
-        }
-    
         const newUser: Omit<User, 'id'> = {
             name,
             email: email.toLowerCase(),
@@ -77,13 +53,23 @@ const App: React.FC = () => {
             avatar_url: `https://i.pravatar.cc/150?u=${Date.now()}`,
         };
         
+        // Attempt to insert the new user directly.
         const { data: insertedUser, error: insertError } = await supabase
             .from('users')
-            .insert(newUser)
+            .insert([newUser])
             .select()
             .single();
-
-        if (insertError || !insertedUser) {
+    
+        // Handle errors, including the case where the email is already in use.
+        if (insertError) {
+            if (insertError.message.includes('duplicate key value violates unique constraint')) {
+                return { success: false, error: 'Este email já está em uso.' };
+            }
+            console.error("Supabase insert error:", insertError);
+            return { success: false, error: 'Não foi possível criar a conta.' };
+        }
+        
+        if (!insertedUser) {
             return { success: false, error: 'Não foi possível criar a conta.' };
         }
     
@@ -221,7 +207,7 @@ const App: React.FC = () => {
         }));
         
         // Update database
-        const { data, error } = await supabase.from('messages').insert({ ...message, chat_id: chatId }).select().single();
+        const { data, error } = await supabase.from('messages').insert([{ ...message, chat_id: chatId }]).select().single();
         if(error || !data) console.error("Failed to send message:", error);
         
         // Replace temp message with real one from DB
@@ -272,12 +258,49 @@ const App: React.FC = () => {
         }
     };
     
-    const handleAddContact = async (newContact: CrmContact) => {
+    const handleAddContact = async (newContact: Omit<CrmContact, 'id'>) => {
         const { supabase } = await import('./services/supabase.ts');
         const { activities, ...contactData } = newContact;
-        const { data, error } = await supabase.from('crm_contacts').insert(contactData).select().single();
+        const { data, error } = await supabase.from('crm_contacts').insert([contactData]).select().single();
         if(!error && data) {
             setCrmContacts(current => [data, ...current]);
+        }
+    };
+
+    const handleAddUser = async (newUser: Omit<User, 'id' | 'password'> & { password?: string }) => {
+        const { supabase } = await import('./services/supabase.ts');
+        const { data, error } = await supabase.from('users').insert([newUser]).select().single();
+        if (!error && data) {
+            setUsers(current => [...current, data]);
+        } else {
+            console.error("Failed to add user:", error);
+            alert("Falha ao adicionar usuário.");
+        }
+    };
+
+    const handleUpdateUser = async (updatedUser: User) => {
+        const { supabase } = await import('./services/supabase.ts');
+        const { password, ...userData } = updatedUser; // Never send password on update
+        const { data, error } = await supabase.from('users').update(userData).eq('id', updatedUser.id).select().single();
+        if (!error && data) {
+            setUsers(current => current.map(u => u.id === data.id ? data : u));
+            if (currentUser?.id === data.id) {
+                setCurrentUser(data);
+            }
+        } else {
+            console.error("Failed to update user:", error);
+            alert("Falha ao atualizar usuário.");
+        }
+    };
+    
+    const handleDeleteUser = async (userId: string) => {
+        const { supabase } = await import('./services/supabase.ts');
+        const { error } = await supabase.from('users').delete().eq('id', userId);
+        if (!error) {
+            setUsers(current => current.filter(u => u.id !== userId));
+        } else {
+            console.error("Failed to delete user:", error);
+            alert("Falha ao remover usuário.");
         }
     };
     
@@ -294,7 +317,7 @@ const App: React.FC = () => {
                 const newActivity: Omit<Activity, 'id'> = {
                     type: 'email', subject, text: body, author_id: currentUser.id, timestamp: new Date().toISOString(), contact_id: contact.id
                 };
-                const { data } = await supabase.from('activities').insert(newActivity).select().single();
+                const { data } = await supabase.from('activities').insert([newActivity]).select().single();
 
                 if (data) {
                     setCrmContacts(currentContacts =>
@@ -309,115 +332,6 @@ const App: React.FC = () => {
         } catch (error) {
             console.error(error);
             alert('Ocorreu um erro ao enviar o email.');
-        }
-    };
-
-
-    const renderActiveView = () => {
-        if (!currentUser) {
-            return (
-                <div className="flex items-center justify-center h-full">
-                    <p>Carregando ou nenhum usuário disponível...</p>
-                </div>
-            );
-        }
-        switch (activeView) {
-            case 'dashboard':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users} /></Suspense>;
-            case 'whatsapp':
-                 if (channels.length === 0) {
-                    return (
-                        <div className="flex flex-col items-center justify-center h-full text-center bg-background-main dark:bg-gray-800 rounded-2xl p-8">
-                            <WhatsAppIcon className="w-24 h-24 text-gray-300 dark:text-gray-600 mb-4" />
-                            <h2 className="text-xl font-semibold text-text-main dark:text-gray-200">Nenhum canal do WhatsApp conectado</h2>
-                            <p className="text-text-secondary dark:text-gray-400 mt-2 max-w-sm">Para começar a atender seus clientes, você precisa primeiro conectar um número do WhatsApp.</p>
-                            <button 
-                                onClick={() => setActiveView('channels')} 
-                                className="mt-6 px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                                Conectar Canal Agora
-                            </button>
-                        </div>
-                    );
-                }
-                return (
-                    <Suspense fallback={<LoadingIndicator message="Carregando Atendimento..." />}>
-                        {whatsAppViewMode === 'integrado' ? (
-                            <WhatsAppCrm 
-                                currentUser={currentUser}
-                                chats={visibleChats}
-                                setChats={setChats}
-                                onSendMessage={handleSendMessage}
-                                users={users}
-                                quickReplies={quickReplies}
-                                crmContacts={crmContacts}
-                                setCrmContacts={setCrmContacts} // This should be updated to onUpdateContact
-                                onTakeOverChat={handleTakeOverChat}
-                                activeChatId={activeChatId}
-                                setActiveChatId={setActiveChatId}
-                            />
-                        ) : (
-                            <WhatsAppWeb 
-                                currentUser={currentUser}
-                                chats={visibleChats}
-                                setChats={setChats}
-                                onSendMessage={handleSendMessage}
-                                users={users}
-                                quickReplies={quickReplies}
-                                onTakeOverChat={handleTakeOverChat}
-                                activeChatId={activeChatId}
-                                setActiveChatId={setActiveChatId}
-                            />
-                        )}
-                    </Suspense>
-                );
-            case 'crm-board':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Funil CRM..." />}><CrmBoard 
-                            contacts={visibleCrmContacts} 
-                            onUpdateContact={handleUpdateContact}
-                            onAddContact={handleAddContact}
-                            users={users} 
-                            currentUser={currentUser} 
-                            onNavigateToChat={handleNavigateToChat}
-                            onSendEmail={setEmailTarget}
-                        /></Suspense>;
-            case 'contacts':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Contatos..." />}><Contacts 
-                            contacts={visibleCrmContacts} 
-                            onAddContact={handleAddContact}
-                            onUpdateContact={handleUpdateContact} 
-                            currentUser={currentUser} 
-                            onDeleteContact={handleDeleteContact} 
-                            onSendEmail={setEmailTarget}
-                            users={users}
-                        /></Suspense>;
-            case 'scheduling':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Agendamentos..." />}><Scheduling contacts={crmContacts} /></Suspense>;
-            case 'broadcast':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Broadcast..." />}><Broadcast /></Suspense>;
-            case 'reports':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Relatórios..." />}><Reports users={users} chats={chats} /></Suspense>;
-            case 'chatbot':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Configurações do Chatbot..." />}><Chatbot knowledgeBase={knowledgeBase} setKnowledgeBase={setKnowledgeBase} /></Suspense>;
-            case 'channels':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Canais..." />}><Canais channels={channels} setChannels={setChannels} /></Suspense>;
-            case 'team':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Equipe..." />}><Team team={users} setTeam={setUsers} currentUser={currentUser} /></Suspense>;
-            case 'logs':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Logs..." />}><Logs users={users} /></Suspense>;
-            case 'profile':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Perfil..." />}><Profile 
-                            currentUser={currentUser}
-                            setCurrentUser={setCurrentUser}
-                            users={users}
-                            setUsers={setUsers}
-                        /></Suspense>;
-            case 'settings':
-                return <Suspense fallback={<LoadingIndicator message="Carregando Configurações..." />}><Settings 
-                            quickReplies={quickReplies} 
-                            setQuickReplies={setQuickReplies} 
-                        /></Suspense>;
-            default:
-                return <Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users}/></Suspense>;
         }
     };
     
@@ -456,7 +370,40 @@ const App: React.FC = () => {
                     onLogout={handleLogout}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-                    {renderActiveView()}
+                    <Suspense fallback={<LoadingIndicator message="Carregando conteúdo..." />}>
+                        <MainContent
+                            activeView={activeView}
+                            currentUser={currentUser}
+                            visibleCrmContacts={visibleCrmContacts}
+                            users={users}
+                            channels={channels}
+                            setActiveView={setActiveView}
+                            whatsAppViewMode={whatsAppViewMode}
+                            visibleChats={visibleChats}
+                            setChats={setChats}
+                            handleSendMessage={handleSendMessage}
+                            quickReplies={quickReplies}
+                            crmContacts={crmContacts}
+                            handleUpdateContact={handleUpdateContact}
+                            handleTakeOverChat={handleTakeOverChat}
+                            activeChatId={activeChatId}
+                            setActiveChatId={setActiveChatId}
+                            handleAddContact={handleAddContact}
+                            handleDeleteContact={handleDeleteContact}
+                            setEmailTarget={setEmailTarget}
+                            onNavigateToChat={handleNavigateToChat}
+                            chats={chats}
+                            knowledgeBase={knowledgeBase}
+                            setKnowledgeBase={setKnowledgeBase}
+                            setChannels={setChannels}
+                            handleAddUser={handleAddUser}
+                            handleUpdateUser={handleUpdateUser}
+                            handleDeleteUser={handleDeleteUser}
+                            setCurrentUser={setCurrentUser}
+                            setUsers={setUsers}
+                            setQuickReplies={setQuickReplies}
+                        />
+                    </Suspense>
                     {emailTarget && (
                         <Suspense fallback={null}>
                             <EmailComposerModal

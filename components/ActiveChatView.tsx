@@ -12,10 +12,10 @@ interface ActiveChatViewProps {
     users: User[];
     quickReplies: QuickReply[];
     onTakeOverChat: (chatId: string) => void;
-    setCrmContacts: React.Dispatch<React.SetStateAction<CrmContact[]>>;
+    onUpdateContact: (contact: CrmContact) => void;
 }
 
-export const ActiveChatView: React.FC<ActiveChatViewProps> = ({ chat, crmContacts, currentUser, onSendMessage, users, quickReplies, onTakeOverChat, setCrmContacts }) => {
+export const ActiveChatView: React.FC<ActiveChatViewProps> = ({ chat, crmContacts, currentUser, onSendMessage, users, quickReplies, onTakeOverChat, onUpdateContact }) => {
     
     return (
         <div className="flex h-full bg-background-main dark:bg-gray-900">
@@ -33,7 +33,7 @@ export const ActiveChatView: React.FC<ActiveChatViewProps> = ({ chat, crmContact
                 currentUser={currentUser}
                 currentChat={chat}
                 crmContacts={crmContacts}
-                onContactsUpdate={setCrmContacts}
+                onContactUpdate={onUpdateContact}
             />
         </div>
     );

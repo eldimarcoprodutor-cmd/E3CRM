@@ -97,17 +97,19 @@ const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplies }) =>
                 .from('quick_replies')
                 .update({ shortcut: reply.shortcut, message: reply.message })
                 .eq('id', reply.id)
-                .select();
+                .select()
+                .single();
             if (data && !error) {
-                setQuickReplies(quickReplies.map(qr => qr.id === reply.id ? data[0] : qr));
+                setQuickReplies(quickReplies.map(qr => qr.id === reply.id ? data : qr));
             }
         } else { // Adding
             const { data, error } = await supabase
                 .from('quick_replies')
-                .insert({ shortcut: reply.shortcut, message: reply.message })
-                .select();
+                .insert([{ shortcut: reply.shortcut, message: reply.message }])
+                .select()
+                .single();
             if (data && !error) {
-                setQuickReplies([data[0], ...quickReplies]);
+                setQuickReplies([data, ...quickReplies]);
             }
         }
         setIsModalOpen(false);
