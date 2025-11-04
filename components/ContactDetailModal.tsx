@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { CrmContact, User, Activity } from '../types.ts';
 import { EmailIcon } from './icons/EmailIcon.tsx';
 import { NoteIcon } from './icons/NoteIcon.tsx';
@@ -89,7 +89,10 @@ export const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ contact,
         setNewNote('');
     };
     
-    const sortedActivities = [...formData.activities].sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const sortedActivities = useMemo(() => 
+        [...formData.activities].sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+        [formData.activities]
+    );
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

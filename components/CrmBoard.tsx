@@ -330,20 +330,23 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
     const handleDrop = (e: React.DragEvent<HTMLDivElement>, newStage: CrmContact['pipeline_stage']) => {
         e.preventDefault();
         setDragOverStage(null);
-
+    
         if (currentUser.role === 'Atendente' && (newStage === 'Fechado' || newStage === 'Perdido')) {
             alert('Apenas gerentes podem mover contatos para "Fechado" ou "Perdido".');
-            setDraggedItemId(null);
             return;
         }
-
+    
         if (draggedItemId) {
-            let originalStage: CrmContact['pipeline_stage'] | undefined;
-
-            setContacts(currentContacts => 
+            const contactToMove = contacts.find(c => c.id === draggedItemId);
+            if (!contactToMove) return;
+    
+            const originalStage = contactToMove.pipeline_stage;
+    
+            if (originalStage === newStage) return; // No change if dropped in the same column
+    
+            setContacts(currentContacts =>
                 currentContacts.map(contact => {
                     if (contact.id === draggedItemId) {
-                        originalStage = contact.pipeline_stage;
                         const stageChangeActivity: Activity = {
                             id: `activity-${Date.now()}`,
                             type: 'stage_change',
@@ -352,9 +355,9 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
                             timestamp: new Date().toISOString(),
                             metadata: { from: originalStage, to: newStage }
                         };
-                        return { 
-                            ...contact, 
-                            pipeline_stage: newStage, 
+                        return {
+                            ...contact,
+                            pipeline_stage: newStage,
                             last_interaction: new Date().toISOString().split('T')[0],
                             activities: [...contact.activities, stageChangeActivity]
                         };
