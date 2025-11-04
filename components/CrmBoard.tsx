@@ -6,7 +6,8 @@ import { ContactDetailModal } from './ContactDetailModal.tsx';
 
 interface CrmBoardProps {
     contacts: CrmContact[];
-    setContacts: (updater: (contacts: CrmContact[]) => CrmContact[]) => void;
+    onUpdateContact: (contact: CrmContact) => void;
+    onAddContact: (contact: Omit<CrmContact, 'id'>) => void;
     users: User[];
     currentUser: User;
     onNavigateToChat: (contact: CrmContact) => void;
@@ -212,7 +213,7 @@ const Column: React.FC<ColumnProps> = ({ stage, contacts, users, userMap, isDrag
 const AddOpportunityModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (contact: CrmContact) => void;
+    onAdd: (contact: Omit<CrmContact, 'id'>) => void;
     users: User[];
 }> = ({ isOpen, onClose, onAdd, users }) => {
     const [name, setName] = useState('');
@@ -230,8 +231,7 @@ const AddOpportunityModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const newContact: CrmContact = {
-            id: `crm-${Date.now()}`,
+        const newContact: Omit<CrmContact, 'id'> = {
             name, email, phone, value,
             pipeline_stage: stage,
             owner_id: ownerId,
@@ -287,7 +287,7 @@ const AddOpportunityModal: React.FC<{
     );
 };
 
-const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, currentUser, onNavigateToChat, onSendEmail }) => {
+const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, onUpdateContact, onAddContact, users, currentUser, onNavigateToChat, onSendEmail }) => {
     const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
     const [dragOverStage, setDragOverStage] = useState<CrmContact['pipeline_stage'] | null>(null);
     const [isAddOppModalOpen, setAddOppModalOpen] = useState(false);
@@ -338,42 +338,31 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
     
         if (draggedItemId) {
             const contactToMove = contacts.find(c => c.id === draggedItemId);
-            if (!contactToMove) return;
-    
+            if (!contactToMove || contactToMove.pipeline_stage === newStage) return;
+
             const originalStage = contactToMove.pipeline_stage;
     
-            if (originalStage === newStage) return; // No change if dropped in the same column
-    
-            setContacts(currentContacts =>
-                currentContacts.map(contact => {
-                    if (contact.id === draggedItemId) {
-                        const stageChangeActivity: Activity = {
-                            id: `activity-${Date.now()}`,
-                            type: 'stage_change',
-                            text: `Etapa movida para ${newStage}`,
-                            author_id: currentUser.id,
-                            timestamp: new Date().toISOString(),
-                            metadata: { from: originalStage, to: newStage }
-                        };
-                        return {
-                            ...contact,
-                            pipeline_stage: newStage,
-                            last_interaction: new Date().toISOString().split('T')[0],
-                            activities: [...contact.activities, stageChangeActivity]
-                        };
-                    }
-                    return contact;
-                })
-            );
+            const stageChangeActivity: Omit<Activity, 'id'> = {
+                type: 'stage_change',
+                text: `Etapa movida para ${newStage}`,
+                author_id: currentUser.id,
+                timestamp: new Date().toISOString(),
+                metadata: { from: originalStage, to: newStage }
+            };
+
+            const updatedContact = {
+                ...contactToMove,
+                pipeline_stage: newStage,
+                last_interaction: new Date().toISOString().split('T')[0],
+                activities: [...contactToMove.activities, stageChangeActivity as Activity]
+            };
+
+            onUpdateContact(updatedContact);
         }
     };
 
-    const handleAddContact = (newContact: CrmContact) => {
-        setContacts(currentContacts => [newContact, ...currentContacts]);
-    };
-
     const handleUpdateContact = (updatedContact: CrmContact) => {
-        setContacts(currentContacts => currentContacts.map(c => c.id === updatedContact.id ? updatedContact : c));
+        onUpdateContact(updatedContact);
         setDetailsModalTarget(null); // Close modal
     };
 
@@ -436,7 +425,7 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, setContacts, users, curre
             <AddOpportunityModal 
                 isOpen={isAddOppModalOpen} 
                 onClose={() => setAddOppModalOpen(false)} 
-                onAdd={handleAddContact}
+                onAdd={onAddContact}
                 users={users}
             />
             {detailsModalTarget && (

@@ -4,7 +4,8 @@ import { ContactDetailModal } from './ContactDetailModal.tsx';
 
 interface ContactsProps {
     contacts: CrmContact[];
-    setContacts: React.Dispatch<React.SetStateAction<CrmContact[]>>;
+    onAddContact: (contact: Omit<CrmContact, 'id'>) => void;
+    onUpdateContact: (contact: CrmContact) => void;
     currentUser: User;
     onDeleteContact: (contactId: string) => void;
     onSendEmail: (contact: CrmContact) => void;
@@ -15,7 +16,7 @@ interface ContactsProps {
 const AddContactModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (contact: CrmContact) => void;
+    onAdd: (contact: Omit<CrmContact, 'id'>) => void;
 }> = ({ isOpen, onClose, onAdd }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -26,8 +27,7 @@ const AddContactModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const newContact: CrmContact = {
-            id: `contact-${Date.now()}`,
+        const newContact: Omit<CrmContact, 'id'> = {
             name,
             email,
             phone,
@@ -66,7 +66,7 @@ const AddContactModal: React.FC<{
 };
 
 
-const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser, onDeleteContact, onSendEmail, users }) => {
+const Contacts: React.FC<ContactsProps> = ({ contacts, onAddContact, onUpdateContact, currentUser, onDeleteContact, onSendEmail, users }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
@@ -79,14 +79,8 @@ const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser,
         contact.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    const handleAddContact = (newContact: CrmContact) => {
-        setContacts(currentContacts => [newContact, ...currentContacts]);
-    };
-
     const handleSaveContact = (updatedContact: CrmContact) => {
-        setContacts(currentContacts =>
-            currentContacts.map(c => (c.id === updatedContact.id ? updatedContact : c))
-        );
+        onUpdateContact(updatedContact);
     };
 
     const handleOpenDetails = (contact: CrmContact) => {
@@ -160,7 +154,7 @@ const Contacts: React.FC<ContactsProps> = ({ contacts, setContacts, currentUser,
             <AddContactModal
                 isOpen={isAddModalOpen}
                 onClose={() => setAddModalOpen(false)}
-                onAdd={handleAddContact}
+                onAdd={onAddContact}
             />
 
             {selectedContact && (

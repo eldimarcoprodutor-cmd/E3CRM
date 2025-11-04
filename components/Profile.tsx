@@ -3,14 +3,13 @@ import type { User } from '../types.ts';
 
 interface ProfileProps {
     currentUser: User;
-    setCurrentUser: (user: User) => void;
-    users: User[];
-    setUsers: (users: User[]) => void;
+    onUpdateUser: (user: User) => Promise<void>;
 }
 
-const Profile: React.FC<ProfileProps> = ({ currentUser, setCurrentUser, users, setUsers }) => {
+const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
     const [profileName, setProfileName] = useState(currentUser.name);
     const [profileEmail, setProfileEmail] = useState(currentUser.email || '');
+    const [isSaving, setIsSaving] = useState(false);
 
     // Update form if currentUser changes, e.g., via the user switcher in the header
     useEffect(() => {
@@ -18,17 +17,14 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, setCurrentUser, users, s
         setProfileEmail(currentUser.email || '');
     }, [currentUser]);
     
-    const handleProfileSave = (e: React.FormEvent) => {
+    const handleProfileSave = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSaving(true);
         const updatedUser = { ...currentUser, name: profileName, email: profileEmail };
         
-        // Update the master list of users
-        const updatedUsers = users.map(u => u.id === currentUser.id ? updatedUser : u);
-        setUsers(updatedUsers);
+        await onUpdateUser(updatedUser);
         
-        // Update the current user state
-        setCurrentUser(updatedUser);
-        
+        setIsSaving(false);
         alert('Perfil salvo com sucesso!');
     };
 
@@ -67,7 +63,23 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, setCurrentUser, users, s
                         />
                     </div>
                     <div className="pt-2">
-                        <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark">Salvar Alterações</button>
+                        <button 
+                          type="submit" 
+                          disabled={isSaving}
+                          className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:bg-primary/70 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Salvando...
+                                </>
+                            ) : (
+                                'Salvar Alterações'
+                            )}
+                        </button>
                     </div>
                 </form>
             </div>

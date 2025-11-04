@@ -4,15 +4,15 @@ import { WhatsAppIcon } from './components/icons/WhatsAppIcon.tsx';
 
 // Lazy load components for code splitting
 const Dashboard = lazy(() => import('./components/Dashboard.tsx'));
-const CrmBoard = lazy(() => import('./CrmBoard.tsx'));
+const CrmBoard = lazy(() => import('./components/CrmBoard.tsx'));
 const WhatsAppWeb = lazy(() => import('./components/WhatsAppWeb.tsx'));
 const Settings = lazy(() => import('./components/Settings.tsx'));
 const Scheduling = lazy(() => import('./components/Scheduling.tsx'));
 const Broadcast = lazy(() => import('./components/Broadcast.tsx'));
 const Reports = lazy(() => import('./components/Reports.tsx'));
 const Chatbot = lazy(() => import('./components/Chatbot.tsx'));
-const Contacts = lazy(() => import('./Contacts.tsx'));
-const Team = lazy(() => import('./Team.tsx'));
+const Contacts = lazy(() => import('./components/Contacts.tsx'));
+const Team = lazy(() => import('./components/Team.tsx'));
 const WhatsAppCrm = lazy(() => import('./components/WhatsAppCrm.tsx'));
 const Logs = lazy(() => import('./components/Logs.tsx'));
 const Canais = lazy(() => import('./components/Canais.tsx'));
@@ -69,7 +69,7 @@ const MainContent: React.FC<MainContentProps> = (props) => {
         crmContacts, handleUpdateContact, handleTakeOverChat, activeChatId, 
         setActiveChatId, handleAddContact, handleDeleteContact, setEmailTarget, onNavigateToChat,
         chats, knowledgeBase, setKnowledgeBase, setChannels, handleAddUser, handleUpdateUser,
-        handleDeleteUser, setCurrentUser, setUsers, setQuickReplies
+        handleDeleteUser, setQuickReplies
     } = props;
     
     switch (activeView) {
@@ -164,9 +164,7 @@ const MainContent: React.FC<MainContentProps> = (props) => {
         case 'profile':
             return <Suspense fallback={<LoadingIndicator message="Carregando Perfil..." />}><Profile 
                         currentUser={currentUser}
-                        setCurrentUser={setCurrentUser}
-                        users={users}
-                        setUsers={setUsers}
+                        onUpdateUser={handleUpdateUser}
                     /></Suspense>;
         case 'settings':
             return <Suspense fallback={<LoadingIndicator message="Carregando Configurações..." />}><Settings 

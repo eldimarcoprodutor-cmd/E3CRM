@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
@@ -19,8 +20,53 @@ const LoadingIndicator: React.FC<{ message: string }> = ({ message }) => (
     </div>
 );
 
+/**
+ * Resets the database by deleting all data from key tables and then creates a single primary user.
+ * This ensures a clean slate on every application load.
+ */
+const resetAndCreatePrimaryUser = async () => {
+    const { supabase } = await import('./services/supabase.ts');
+    console.log("Iniciando a redefinição e criação do usuário primário...");
+
+    // Order of deletion is important to respect foreign key constraints
+    const tablesToDelete = ['activities', 'messages', 'chats', 'quick_replies', 'knowledge_base', 'crm_contacts', 'users'];
+    
+    for (const table of tablesToDelete) {
+        console.log(`Removendo todos os registros da tabela: ${table}...`);
+        const { error } = await supabase.from(table).delete().not('id', 'is', null);
+        
+        if (error) {
+            console.error(`Erro ao limpar a tabela ${table}:`, error.message);
+        } else {
+            console.log(`Tabela ${table} limpa com sucesso.`);
+        }
+    }
+
+    console.log("Criando o usuário primário (Gerente)...");
+    const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert({
+            name: 'Gerente Principal',
+            email: 'gerente@e3crm.com',
+            password: 'password', // In a real app, this should be securely hashed.
+            role: 'Gerente',
+            avatar_url: 'https://i.pravatar.cc/150?u=gerente'
+        })
+        .select()
+        .single();
+
+    if (insertError) {
+        console.error("Falha ao criar usuário primário:", insertError.message);
+        throw new Error("Não foi possível criar o usuário primário.");
+    }
+
+    console.log("Usuário primário criado com sucesso:", newUser);
+};
+
+
 const App: React.FC = () => {
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitializing, setIsInitializing] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [activeView, setActiveView] = useState('dashboard');
     const [users, setUsers] = useState<User[]>([]);
@@ -37,6 +83,24 @@ const App: React.FC = () => {
         return (localStorage.getItem('theme') as Theme) || 'system';
     });
 
+    const handleLogin = async (email: string, password: string): Promise<{ success: boolean, error?: string }> => {
+        const { supabase } = await import('./services/supabase.ts');
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email.toLowerCase())
+            .eq('password', password)
+            .single();
+    
+        if (error || !user) {
+            console.error("Supabase login error:", error);
+            return { success: false, error: 'Email ou senha inválidos.' };
+        }
+    
+        setCurrentUser(user);
+        return { success: true };
+    };
+
     const handleLogout = () => {
         setCurrentUser(null);
         setActiveView('dashboard');
@@ -48,19 +112,17 @@ const App: React.FC = () => {
         const newUser: Omit<User, 'id'> = {
             name,
             email: email.toLowerCase(),
-            password, // In a real app, this should be hashed.
+            password,
             role: 'Atendente',
             avatar_url: `https://i.pravatar.cc/150?u=${Date.now()}`,
         };
         
-        // Attempt to insert the new user directly.
         const { data: insertedUser, error: insertError } = await supabase
             .from('users')
             .insert([newUser])
             .select()
             .single();
     
-        // Handle errors, including the case where the email is already in use.
         if (insertError) {
             if (insertError.message.includes('duplicate key value violates unique constraint')) {
                 return { success: false, error: 'Este email já está em uso.' };
@@ -74,11 +136,10 @@ const App: React.FC = () => {
         }
     
         setUsers(prevUsers => [...prevUsers, insertedUser]);
-        setCurrentUser(insertedUser); // Automatically log in the new user
+        setCurrentUser(insertedUser);
         return { success: true };
     };
 
-    // Data segregation based on user role
     const visibleCrmContacts = useMemo(() => {
         if (!currentUser) return [];
         if (currentUser.role === 'Gerente') {
@@ -133,6 +194,8 @@ const App: React.FC = () => {
 
     // Main data fetching effect
     useEffect(() => {
+      if (isInitializing) return;
+
       const fetchInitialData = async () => {
         setIsLoading(true);
         const { supabase } = await import('./services/supabase.ts');
@@ -159,6 +222,20 @@ const App: React.FC = () => {
         setIsLoading(false);
       };
       fetchInitialData();
+    }, [isInitializing]);
+    
+    // One-time setup effect
+    useEffect(() => {
+        const initializeApp = async () => {
+            try {
+                await resetAndCreatePrimaryUser();
+            } catch (error) {
+                console.error("Falha na inicialização da aplicação:", error);
+            } finally {
+                setIsInitializing(false);
+            }
+        };
+        initializeApp();
     }, []);
 
     const handleNavigateToChat = (contact: CrmContact) => {
@@ -166,7 +243,6 @@ const App: React.FC = () => {
         if (existingChat) {
             setActiveChatId(existingChat.id);
         } else {
-            // This part can be enhanced to also create a chat in the database
             const newChat: Chat = {
                 id: `chat-${contact.id}-${Date.now()}`,
                 contact_id: contact.id,
@@ -188,7 +264,6 @@ const App: React.FC = () => {
         if (!currentUser) return;
         const { supabase } = await import('./services/supabase.ts');
 
-        // Optimistically update UI
         const tempId = `msg-temp-${Date.now()}`;
         const newMessage: Message = { ...message, id: tempId, timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) };
 
@@ -206,11 +281,9 @@ const App: React.FC = () => {
             return chat;
         }));
         
-        // Update database
         const { data, error } = await supabase.from('messages').insert([{ ...message, chat_id: chatId }]).select().single();
         if(error || !data) console.error("Failed to send message:", error);
         
-        // Replace temp message with real one from DB
         setChats(currentChats => currentChats.map(chat => chat.id === chatId ? { ...chat, messages: chat.messages.map(m => m.id === tempId ? data : m) } : chat));
 
     }, [currentUser, setChats]);
@@ -227,32 +300,47 @@ const App: React.FC = () => {
             alert('Apenas gerentes podem remover contatos.');
             return;
         }
-        if (window.confirm("Tem certeza que deseja remover este contato e todas as suas informações?")) {
-            const { supabase } = await import('./services/supabase.ts');
-            const { error } = await supabase.from('crm_contacts').delete().eq('id', contactId);
-            if (!error) {
-                setCrmContacts(prev => prev.filter(c => c.id !== contactId));
-                setChats(prev => prev.filter(c => c.contact_id !== contactId));
-            } else {
-                 alert('Falha ao remover o contato.');
-            }
+        // Confirmation is now handled in the UI component
+        const { supabase } = await import('./services/supabase.ts');
+        const { error } = await supabase.from('crm_contacts').delete().eq('id', contactId);
+        if (!error) {
+            setCrmContacts(prev => prev.filter(c => c.id !== contactId));
+            setChats(prev => prev.filter(c => c.contact_id !== contactId));
+        } else {
+             alert('Falha ao remover o contato.');
         }
     };
 
     const handleUpdateContact = async (updatedContact: CrmContact) => {
         const { supabase } = await import('./services/supabase.ts');
-        // Separate activities to upsert them
         const { activities, ...contactData } = updatedContact;
     
         const { error } = await supabase.from('crm_contacts').update(contactData).eq('id', contactData.id);
     
         if (activities && activities.length > 0) {
+            // New activities from AI or stage changes may not have an ID yet.
+            // Upserting ensures they are added to the DB.
             const activitiesToUpsert = activities.map(act => ({ ...act, contact_id: contactData.id }));
             await supabase.from('activities').upsert(activitiesToUpsert);
         }
     
         if (!error) {
-            setCrmContacts(current => current.map(c => c.id === updatedContact.id ? updatedContact : c));
+            // Refetch the contact to ensure local state has the latest data, 
+            // including DB-generated IDs for new activities.
+            const { data: refreshedContactData, error: refreshError } = await supabase
+                .from('crm_contacts')
+                .select('*, activities(*)')
+                .eq('id', updatedContact.id)
+                .single();
+
+            if (refreshedContactData && !refreshError) {
+                 setCrmContacts(current => current.map(c => c.id === refreshedContactData.id ? refreshedContactData : c));
+            } else {
+                // If refreshing fails, log the error but avoid setting state with stale data
+                // which could cause data consistency issues (e.g., activities without DB IDs).
+                // The update was successful in the DB, a page refresh will show the correct data.
+                console.error("Failed to refresh contact after update:", refreshError?.message);
+            }
         } else {
             console.error("Failed to update contact:", error);
         }
@@ -263,7 +351,8 @@ const App: React.FC = () => {
         const { activities, ...contactData } = newContact;
         const { data, error } = await supabase.from('crm_contacts').insert([contactData]).select().single();
         if(!error && data) {
-            setCrmContacts(current => [data, ...current]);
+            const completeContact: CrmContact = { ...data, activities: activities || [] };
+            setCrmContacts(current => [completeContact, ...current]);
         }
     };
 
@@ -280,7 +369,7 @@ const App: React.FC = () => {
 
     const handleUpdateUser = async (updatedUser: User) => {
         const { supabase } = await import('./services/supabase.ts');
-        const { password, ...userData } = updatedUser; // Never send password on update
+        const { password, ...userData } = updatedUser;
         const { data, error } = await supabase.from('users').update(userData).eq('id', updatedUser.id).select().single();
         if (!error && data) {
             setUsers(current => current.map(u => u.id === data.id ? data : u));
@@ -335,6 +424,10 @@ const App: React.FC = () => {
         }
     };
     
+    if (isInitializing) {
+        return <LoadingIndicator message="Configurando o ambiente e criando usuário principal..." />;
+    }
+    
     if (isLoading) {
         return <LoadingIndicator message="Carregando dados da aplicação..." />;
     }
@@ -342,7 +435,7 @@ const App: React.FC = () => {
     if (!currentUser) {
          return (
             <Suspense fallback={<LoadingIndicator message="Carregando..." />}>
-                <Login users={users} onLoginSuccess={setCurrentUser} onSignUp={handleSignUp} />
+                <Login users={users} onLogin={handleLogin} onSignUp={handleSignUp} />
             </Suspense>
         );
     }

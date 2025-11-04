@@ -4,11 +4,11 @@ import { ChatIcon } from './icons/ChatIcon.tsx';
 
 interface LoginProps {
     users: User[];
-    onLoginSuccess: (user: User) => void;
+    onLogin: (email: string, password: string) => Promise<{ success: boolean, error?: string }>;
     onSignUp: (name: string, email: string, password: string) => Promise<{ success: boolean, error?: string }>;
 }
 
-const Login: React.FC<LoginProps> = ({ users, onLoginSuccess, onSignUp }) => {
+const Login: React.FC<LoginProps> = ({ users, onLogin, onSignUp }) => {
     const [isLoginView, setIsLoginView] = useState(true);
 
     // Common state
@@ -20,17 +20,17 @@ const Login: React.FC<LoginProps> = ({ users, onLoginSuccess, onSignUp }) => {
     const [name, setName] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    const handleLoginSubmit = (e: React.FormEvent) => {
+    const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+        const result = await onLogin(email, password);
 
-        if (user) {
-            onLoginSuccess(user);
-        } else {
-            setError('Email ou senha inválidos.');
+        if (!result.success) {
+            setError(result.error || 'Email ou senha inválidos.');
         }
+        // On success, the App component will set the currentUser and re-render,
+        // so we don't need to do anything else here.
     };
     
     const handleSignUpSubmit = async (e: React.FormEvent) => {
@@ -133,10 +133,9 @@ const Login: React.FC<LoginProps> = ({ users, onLoginSuccess, onSignUp }) => {
 
                 {isLoginView && (
                     <div className="text-center text-xs text-text-secondary dark:text-gray-500 pt-4">
-                        <p>Use um dos emails abaixo com a senha "password"</p>
-                        <ul className="mt-2 list-disc list-inside">
-                            {users.map(u => <li key={u.id}>{u.email}</li>)}
-                        </ul>
+                        <p>Usuário primário criado:</p>
+                        <p className="font-semibold mt-1">Email: gerente@e3crm.com</p>
+                        <p className="font-semibold">Senha: password</p>
                     </div>
                 )}
             </div>

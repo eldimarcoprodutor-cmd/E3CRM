@@ -79,6 +79,11 @@ const TeamMemberModal: React.FC<{
                             <option value="Gerente">Gerente</option>
                         </select>
                     </div>
+                    {!isEditing && (
+                        <p className="text-xs text-text-secondary dark:text-gray-400 pt-2">
+                            A senha padrão para novos usuários é "password". O usuário poderá alterá-la em seu perfil.
+                        </p>
+                    )}
                     <div className="flex justify-end gap-2 pt-2">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg">Cancelar</button>
                         <button type="submit" className="px-4 py-2 text-white bg-primary rounded-lg">Salvar</button>
