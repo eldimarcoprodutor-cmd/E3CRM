@@ -115,7 +115,7 @@ const Team: React.FC<TeamProps> = ({ team, setTeam, currentUser }) => {
 
     const handleRemove = (userId: string) => {
         if (userId === currentUser.id) {
-            alert("Você не pode remover a si mesmo.");
+            alert("Você não pode remover a si mesmo.");
             return;
         }
         if (window.confirm("Tem certeza que deseja remover este membro da equipe?")) {
