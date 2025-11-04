@@ -88,7 +88,6 @@ const executeFunctionCall = (functionCall: GenerateContentResponse['functionCall
             const updatedContacts = contacts.map(c => {
                 if (c.name.toLowerCase() === contactName.toLowerCase()) {
                     found = true;
-                    // Fix: Added the missing 'type' property to conform to the Note interface.
                     const newNote: Note = {
                         id: `note-${Date.now()}`,
                         text: noteText,
