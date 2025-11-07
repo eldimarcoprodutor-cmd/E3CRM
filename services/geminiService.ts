@@ -92,7 +92,7 @@ const executeFunctionCall = (functionCall: GenerateContentResponse['functionCall
 export const askAiChatbot = async (message: string, contacts: CrmContact[], currentUser: User): Promise<AiChatbotResponse> => {
     try {
         const chat = getAiChat();
-        let response = await chat.sendMessage({ message });
+        let response = await chat.sendMessage(message);
 
         let contactThatWasUpdated: CrmContact | undefined = undefined;
         let currentContacts = [...contacts]; // Make a copy to update during the loop

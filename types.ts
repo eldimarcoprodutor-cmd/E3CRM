@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   name: string;
@@ -16,6 +17,7 @@ export interface Message {
   avatar_url: string;
   timestamp: string;
   type: 'text' | 'internal';
+  status: 'sent' | 'delivered' | 'read';
 }
 
 export interface AiChatMessage {

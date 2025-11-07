@@ -5,6 +5,8 @@ import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
 import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Theme, Channel } from './types.ts';
 import MainContent from './MainContent.tsx';
+import { supabase } from './services/supabase.ts';
+
 
 // Lazy load components for code splitting
 const Login = lazy(() => import('./components/Login.tsx'));
@@ -26,30 +28,23 @@ const LoadingIndicator: React.FC<{ message: string }> = ({ message }) => (
  * This is intended for the initial setup of the application.
  */
 const resetAndCreatePrimaryUser = async () => {
-    const { supabase } = await import('./services/supabase.ts');
     console.log("Iniciando a redefinição e criação do usuário primário...");
 
-    // Order of deletion is important to respect foreign key constraints
     const tablesToDelete = ['messages', 'chats', 'quick_replies', 'knowledge_base', 'crm_contacts', 'profiles'];
     
     for (const table of tablesToDelete) {
         console.log(`Removendo todos os registros da tabela: ${table}...`);
-        const { error } = await supabase.from(table).delete().not('id', 'is', null);
-        
-        if (error) {
-            console.error(`Erro ao limpar a tabela ${table}:`, error.message);
-        } else {
-            console.log(`Tabela ${table} limpa com sucesso.`);
-        }
+        const { error } = await supabase.from(table).delete().gt('id', '0'); // Use a filter to delete all
+        if (error) console.error(`Erro ao limpar a tabela ${table}:`, error.message);
     }
 
     console.log("Criando o usuário primário (Gerente)...");
-    const { data: newUser, error: insertError } = await supabase
+    const { data: manager, error: insertError } = await supabase
         .from('profiles')
         .insert({
             name: 'Gerente Principal',
             login: 'eldimarcoprodutor@gmail.com',
-            password: 'password', // In a real app, this should be securely hashed.
+            password: 'password',
             role: 'Gerente',
             avatar_url: 'https://i.pravatar.cc/150?u=gerente'
         })
@@ -60,8 +55,37 @@ const resetAndCreatePrimaryUser = async () => {
         console.error("Falha ao criar usuário primário:", insertError.message);
         throw new Error("Não foi possível criar o usuário primário.");
     }
+    
+    console.log("Criando contatos e chats de exemplo...");
+    const { data: contacts, error: contactsError } = await supabase.from('crm_contacts').insert([
+        { name: 'Ana Silva', email: 'ana.silva@example.com', phone: '+55 11 98765-4321', avatar_url: 'https://i.pravatar.cc/150?u=ana', tags: ['novo-lead', 'produto-a'], pipeline_stage: 'Contato', owner_id: manager.id, value: 500, temperature: 'Morno', next_action_date: new Date().toISOString().split('T')[0], lead_source: 'Website' },
+        { name: 'Bruno Costa', email: 'bruno.costa@example.com', phone: '+55 21 91234-5678', avatar_url: 'https://i.pravatar.cc/150?u=bruno', tags: ['cliente-ativo', 'produto-b'], pipeline_stage: 'Fechado', owner_id: manager.id, value: 2500, temperature: 'Quente', next_action_date: new Date().toISOString().split('T')[0], lead_source: 'Indicação' },
+    ]).select();
 
-    console.log("Usuário primário criado com sucesso:", newUser);
+    if (contactsError) { console.error("Erro ao criar contatos:", contactsError.message); return; }
+
+    const anaContact = contacts.find(c => c.name === 'Ana Silva');
+    const brunoContact = contacts.find(c => c.name === 'Bruno Costa');
+
+    const { data: newChats, error: chatsError } = await supabase.from('chats').insert([
+        { contact_id: anaContact.id, contact_name: anaContact.name, avatar_url: anaContact.avatar_url, handled_by: 'bot' },
+        { contact_id: brunoContact.id, contact_name: brunoContact.name, avatar_url: brunoContact.avatar_url, handled_by: manager.id },
+    ]).select();
+
+    if (chatsError) { console.error("Erro ao criar chats:", chatsError.message); return; }
+
+    const anaChat = newChats.find(c => c.contact_id === anaContact.id);
+    const brunoChat = newChats.find(c => c.contact_id === brunoContact.id);
+
+    const { error: messagesError } = await supabase.from('messages').insert([
+        { chat_id: anaChat.id, sender: anaContact.id, text: 'Olá, gostaria de saber mais sobre o produto A.', avatar_url: anaContact.avatar_url, type: 'text', status: 'read' },
+        { chat_id: brunoChat.id, sender: brunoContact.id, text: 'Obrigado pelo suporte, foi excelente!', avatar_url: brunoContact.avatar_url, type: 'text', status: 'read' },
+        { chat_id: brunoChat.id, sender: manager.id, text: 'Ficamos felizes em ajudar, Bruno!', avatar_url: manager.avatar_url, type: 'text', status: 'read' },
+    ]);
+
+    if (messagesError) console.error("Erro ao criar mensagens:", messagesError.message);
+    
+    console.log("Banco de dados semeado com sucesso.");
 };
 
 
@@ -77,7 +101,7 @@ const App: React.FC = () => {
     const [crmContacts, setCrmContacts] = useState<CrmContact[]>([]);
     const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
     const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseItem[]>([]);
-    const [whatsAppViewMode, setWhatsAppViewMode] = useState<'integrado' | 'classico'>('integrado');
+    const [whatsAppViewMode, setWhatsAppViewMode] = useState<'integrado' | 'classico'>('classico');
     const [channels, setChannels] = useState<Channel[]>([]);
     const [emailTarget, setEmailTarget] = useState<CrmContact | null>(null);
     const [theme, setTheme] = useState<Theme>(() => {
@@ -85,7 +109,6 @@ const App: React.FC = () => {
     });
 
     const handleLogin = async (login: string, password: string): Promise<{ success: boolean, error?: string }> => {
-        const { supabase } = await import('./services/supabase.ts');
         const { data: user, error } = await supabase
             .from('profiles')
             .select('*')
@@ -108,8 +131,6 @@ const App: React.FC = () => {
     };
     
     const handleSignUp = async (name: string, login: string, password: string): Promise<{ success: boolean, error?: string }> => {
-        const { supabase } = await import('./services/supabase.ts');
-        
         const newUser: Omit<User, 'id'> = {
             name,
             login: login.toLowerCase(),
@@ -195,12 +216,10 @@ const App: React.FC = () => {
 
     // Main data fetching effect
     useEffect(() => {
-      if (isInitializing) return;
+      if (!currentUser) return;
 
       const fetchInitialData = async () => {
         setIsLoading(true);
-        const { supabase } = await import('./services/supabase.ts');
-        
         const [
             { data: usersData },
             { data: contactsData },
@@ -210,26 +229,64 @@ const App: React.FC = () => {
         ] = await Promise.all([
              supabase.from('profiles').select('*'),
              supabase.from('crm_contacts').select('*'), 
-             supabase.from('chats').select('*, messages(*)'),
+             supabase.from('chats').select('*, messages(*)').order('timestamp', { foreignTable: 'messages', ascending: false }),
              supabase.from('quick_replies').select('*'),
              supabase.from('knowledge_base').select('*')
         ]);
 
         setUsers(usersData || []);
         setCrmContacts(contactsData || []);
-        setChats(chatsData || []);
+        // Sort chats by the timestamp of their most recent message
+        const sortedChats = (chatsData || []).sort((a, b) => {
+            const aLastMessage = a.messages[0];
+            const bLastMessage = b.messages[0];
+            if (!aLastMessage) return 1;
+            if (!bLastMessage) return -1;
+            return new Date(bLastMessage.timestamp).getTime() - new Date(aLastMessage.timestamp).getTime();
+        });
+        setChats(sortedChats || []);
         setQuickReplies(qrData || []);
         setKnowledgeBase(kbData || []);
         setIsLoading(false);
       };
       fetchInitialData();
-    }, [isInitializing]);
+    }, [currentUser]);
     
+    // Real-time subscriptions
+    useEffect(() => {
+        const messageSubscription = supabase
+            .channel('public:messages')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+                const newMessage = payload.new as Message;
+                setChats(currentChats => {
+                    return currentChats.map(chat => {
+                        if (chat.id === newMessage.chat_id) {
+                            return {
+                                ...chat,
+                                messages: [...chat.messages, newMessage].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
+                                last_message: newMessage.text,
+                                timestamp: new Date(newMessage.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                            };
+                        }
+                        return chat;
+                    }).sort((a, b) => { // Re-sort chats after update
+                        const aLastMessageTime = a.messages.length > 0 ? new Date(a.messages[a.messages.length - 1].timestamp).getTime() : 0;
+                        const bLastMessageTime = b.messages.length > 0 ? new Date(b.messages[b.messages.length - 1].timestamp).getTime() : 0;
+                        return bLastMessageTime - aLastMessageTime;
+                    });
+                });
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(messageSubscription);
+        }
+    }, [supabase]);
+
     // One-time setup effect
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                const { supabase } = await import('./services/supabase.ts');
                 const { data: existingUsers, error } = await supabase.from('profiles').select('id').limit(1);
 
                 if (error && error.code !== '42P01') { // 42P01 is "undefined_table" for Postgres
@@ -255,6 +312,7 @@ const App: React.FC = () => {
         if (existingChat) {
             setActiveChatId(existingChat.id);
         } else {
+            // This part should ideally create a chat in DB and let real-time handle it, but for now we add locally for responsiveness
             const newChat: Chat = {
                 id: `chat-${contact.id}-${Date.now()}`,
                 contact_id: contact.id,
@@ -272,37 +330,30 @@ const App: React.FC = () => {
         setActiveView('whatsapp');
     };
 
-    const handleSendMessage = useCallback(async (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => {
+    const handleSendMessage = useCallback(async (chatId: string, messageText: string) => {
         if (!currentUser) return;
-        const { supabase } = await import('./services/supabase.ts');
-
-        const tempId = `msg-temp-${Date.now()}`;
-        const newMessage: Message = { ...message, id: tempId, timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) };
-
-        setChats(currentChats => currentChats.map(chat => {
-            if (chat.id === chatId) {
-                const isBotHandled = chat.handled_by === 'bot';
-                return {
-                    ...chat,
-                    messages: [...chat.messages, newMessage],
-                    last_message: newMessage.text,
-                    timestamp: newMessage.timestamp,
-                    handled_by: isBotHandled ? currentUser.id : chat.handled_by,
-                };
-            }
-            return chat;
-        }));
         
-        const { data, error } = await supabase.from('messages').insert([{ ...message, chat_id: chatId }]).select().single();
-        if(error || !data) console.error("Failed to send message:", error);
-        
-        setChats(currentChats => currentChats.map(chat => chat.id === chatId ? { ...chat, messages: chat.messages.map(m => m.id === tempId ? data : m) } : chat));
+        const messagePayload = {
+            chat_id: chatId,
+            sender: currentUser.id,
+            text: messageText,
+            avatar_url: currentUser.avatar_url,
+            type: 'text' as 'text' | 'internal',
+            status: 'sent' as 'sent' | 'delivered' | 'read',
+            timestamp: new Date().toISOString()
+        };
 
-    }, [currentUser, setChats]);
+        const { error } = await supabase.from('messages').insert(messagePayload);
+        
+        if(error) {
+            console.error("Failed to send message:", error);
+            // Optionally, implement retry logic or show an error state in the UI
+        }
+
+    }, [currentUser]);
 
     const handleTakeOverChat = async (chatId: string) => {
         if (!currentUser) return;
-        const { supabase } = await import('./services/supabase.ts');
         setChats(currentChats => currentChats.map(chat => chat.id === chatId ? { ...chat, handled_by: currentUser.id } : chat));
         await supabase.from('chats').update({ handled_by: currentUser.id }).eq('id', chatId);
     };
@@ -312,8 +363,6 @@ const App: React.FC = () => {
             alert('Apenas gerentes podem remover contatos.');
             return;
         }
-        // Confirmation is now handled in the UI component
-        const { supabase } = await import('./services/supabase.ts');
         const { error } = await supabase.from('crm_contacts').delete().eq('id', contactId);
         if (!error) {
             setCrmContacts(prev => prev.filter(c => c.id !== contactId));
@@ -324,13 +373,10 @@ const App: React.FC = () => {
     };
 
     const handleUpdateContact = async (updatedContact: CrmContact) => {
-        const { supabase } = await import('./services/supabase.ts');
-        
         const { id, ...contactData } = updatedContact;
         const { error } = await supabase.from('crm_contacts').update(contactData).eq('id', id);
     
         if (!error) {
-            // Update local state directly as we are no longer waiting for DB-generated IDs for activities.
             setCrmContacts(current => current.map(c => c.id === updatedContact.id ? updatedContact : c));
         } else {
             console.error("Failed to update contact:", error);
@@ -338,7 +384,6 @@ const App: React.FC = () => {
     };
     
     const handleAddContact = async (newContact: Omit<CrmContact, 'id'>) => {
-        const { supabase } = await import('./services/supabase.ts');
         const { data, error } = await supabase.from('crm_contacts').insert([newContact]).select().single();
         if(!error && data) {
             setCrmContacts(current => [data, ...current]);
@@ -346,7 +391,6 @@ const App: React.FC = () => {
     };
 
     const handleAddUser = async (newUser: Omit<User, 'id' | 'password'> & { password?: string }) => {
-        const { supabase } = await import('./services/supabase.ts');
         const { data, error } = await supabase.from('profiles').insert([newUser]).select().single();
         if (!error && data) {
             setUsers(current => [...current, data]);
@@ -357,7 +401,6 @@ const App: React.FC = () => {
     };
 
     const handleUpdateUser = async (updatedUser: User) => {
-        const { supabase } = await import('./services/supabase.ts');
         const { id, password, ...userData } = updatedUser;
         const { data, error } = await supabase.from('profiles').update(userData).eq('id', id).select().single();
         if (!error && data) {
@@ -372,7 +415,6 @@ const App: React.FC = () => {
     };
     
     const handleDeleteUser = async (userId: string) => {
-        const { supabase } = await import('./services/supabase.ts');
         const { error } = await supabase.from('profiles').delete().eq('id', userId);
         if (!error) {
             setUsers(current => current.filter(u => u.id !== userId));
@@ -391,7 +433,6 @@ const App: React.FC = () => {
             const result = await sendEmail({ to: contact.email, subject, body });
 
             if (result.success) {
-                // Not logging activity as the table does not exist.
                 alert('Email enviado com sucesso!');
                 setEmailTarget(null);
             } else {
@@ -407,7 +448,7 @@ const App: React.FC = () => {
         return <LoadingIndicator message="Configurando o ambiente e criando usuário principal..." />;
     }
     
-    if (isLoading) {
+    if (!currentUser && isLoading) {
         return <LoadingIndicator message="Carregando dados da aplicação..." />;
     }
 
@@ -441,7 +482,7 @@ const App: React.FC = () => {
                     setTheme={setTheme}
                     onLogout={handleLogout}
                 />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto p-0 sm:p-4 md:p-6 bg-wa-bg dark:bg-wa-bg-dark wa-chat-bg">
                     <Suspense fallback={<LoadingIndicator message="Carregando conteúdo..." />}>
                         <MainContent
                             activeView={activeView}

@@ -8,44 +8,11 @@ import { SentimentIndicator } from './SentimentIndicator.tsx';
 interface ChatInterfaceProps {
     chat: Chat;
     currentUser: User;
-    onSendMessage: (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
+    onSendMessage: (chatId: string, messageText: string) => void;
     users: User[];
     quickReplies: QuickReply[];
     onTakeOverChat: (chatId: string) => void;
 }
-
-const AiSuggestions: React.FC<{ chatHistory: string; onSuggestionClick: (text: string) => void; }> = ({ chatHistory, onSuggestionClick }) => {
-    const [suggestions, setSuggestions] = useState<string[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        if(!chatHistory) return;
-        const fetchSuggestions = async () => {
-            setIsLoading(true);
-            const { generateReplySuggestion } = await import('../services/geminiService.ts');
-            const result = await generateReplySuggestion(chatHistory);
-            setSuggestions(result);
-            setIsLoading(false);
-        };
-        const timer = setTimeout(fetchSuggestions, 500);
-        return () => clearTimeout(timer);
-    }, [chatHistory]);
-
-    return (
-        <div className="px-4 pt-2 pb-1 border-t dark:border-gray-700 bg-white dark:bg-gray-800">
-            <p className="text-xs font-semibold text-text-secondary dark:text-gray-400 mb-2">Sugestões da IA:</p>
-            {isLoading ? <p className="text-xs text-gray-400">Gerando...</p> : (
-                <div className="flex flex-wrap gap-2">
-                    {suggestions.map((s, i) => (
-                        <button key={i} onClick={() => onSuggestionClick(s)} className="px-3 py-1 text-xs bg-primary-light dark:bg-primary/20 text-primary-dark dark:text-primary-light rounded-full hover:bg-primary-light/80 dark:hover:bg-primary/30">
-                            {s}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
 
 const AiHandoffBanner: React.FC<{ onTakeOver: () => void }> = ({ onTakeOver }) => (
     <div className="p-3 bg-primary-light dark:bg-primary/20 text-center border-b dark:border-gray-700">
@@ -65,95 +32,75 @@ const AiHandoffBanner: React.FC<{ onTakeOver: () => void }> = ({ onTakeOver }) =
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chat, currentUser, onSendMessage, users, quickReplies, onTakeOverChat }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [newMessage, setNewMessage] = useState('');
     const [sentiment, setSentiment] = useState<Sentiment>('Analisando...');
 
-    const chatHistoryString = chat.messages
-        .filter(m => m.type === 'text')
-        .map(m => {
-            const senderName = m.sender === currentUser.id ? 'Atendente' : 'Cliente';
-            return `${senderName}: ${m.text}`;
-        }).join('\n');
-
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
     }, [chat.messages]);
-
-    useEffect(() => {
-        const performSentimentAnalysis = async () => {
-            const lastMessage = chat.messages[chat.messages.length - 1];
-            // Only analyze if there are messages and the last one is from the customer
-            if (lastMessage && lastMessage.sender !== currentUser.id) {
-                setSentiment('Analisando...');
-                const { analyzeSentiment } = await import('../services/geminiService.ts');
-                const result = await analyzeSentiment(chatHistoryString);
-                setSentiment(result);
-            }
-        };
-
-        performSentimentAnalysis();
-    }, [chat.messages, currentUser.id, chatHistoryString]);
     
+    useEffect(() => {
+        const chatHistoryString = chat.messages
+            .filter(m => m.type === 'text' && m.sender !== currentUser.id)
+            .map(m => `Cliente: ${m.text}`).join('\n');
 
-    const handleSend = (type: 'text' | 'internal', text: string) => {
+        if (!chatHistoryString) return;
+
+        const performSentimentAnalysis = async () => {
+            setSentiment('Analisando...');
+            const { analyzeSentiment } = await import('../services/geminiService.ts');
+            const result = await analyzeSentiment(chatHistoryString);
+            setSentiment(result);
+        };
+        const timer = setTimeout(performSentimentAnalysis, 1000);
+        return () => clearTimeout(timer);
+    }, [chat.messages, currentUser.id]);
+
+    const handleSend = (text: string) => {
         if (text.trim()) {
-            onSendMessage(chat.id, {
-                sender: currentUser.id,
-                text: text,
-                avatar_url: currentUser.avatar_url,
-                type: type,
-                chat_id: chat.id,
-            });
-            setNewMessage('');
+            onSendMessage(chat.id, text);
         }
     };
     
     const isBotHandled = chat.handled_by === 'bot';
 
     return (
-        <div className="flex flex-col h-full bg-background-main dark:bg-gray-900">
+        <div className="flex flex-col h-full bg-transparent">
             {/* Chat Header */}
-            <header className="flex items-center p-4 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm">
+            <header className="flex-shrink-0 flex items-center p-3 bg-[#f0f2f5] dark:bg-[#202c33] border-b border-gray-200 dark:border-gray-800">
                 <img src={chat.avatar_url} alt={chat.contact_name} className="w-10 h-10 rounded-full" />
                 <div className="ml-4">
-                    <div className="flex items-center gap-3">
-                        <p className="font-bold text-text-main dark:text-white">{chat.contact_name}</p>
-                        <SentimentIndicator sentiment={sentiment} />
-                    </div>
+                    <p className="font-semibold text-text-main dark:text-gray-100">{chat.contact_name}</p>
                     <p className="text-xs text-status-success">Online</p>
+                </div>
+                 <div className="ml-auto">
+                    <SentimentIndicator sentiment={sentiment} />
                 </div>
             </header>
             
             {isBotHandled && <AiHandoffBanner onTakeOver={() => onTakeOverChat(chat.id)} />}
 
             {/* Messages */}
-            <main className="flex-1 overflow-y-auto p-4">
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2 relative">
+                <div className="wa-chat-bg-pattern"></div>
                 {chat.messages.map((msg) => (
                     <ChatMessageComponent 
                         key={msg.id} 
                         message={msg} 
                         currentUser={currentUser} 
-                        contactAvatar={chat.avatar_url}
-                        users={users}
                     />
                 ))}
                 <div ref={messagesEndRef} />
             </main>
 
-            {/* AI Suggestions & Message Input */}
-            { !isBotHandled && (
-                <>
-                    <AiSuggestions chatHistory={chatHistoryString} onSuggestionClick={(text) => setNewMessage(text)} />
-                    <ChatInputFooter
-                        value={newMessage}
-                        onChange={setNewMessage}
-                        onSend={handleSend}
-                        currentUser={currentUser}
-                        quickReplies={quickReplies}
-                        users={users}
-                    />
-                </>
-            )}
+            {/* Message Input */}
+             <footer className="flex-shrink-0 bg-[#f0f2f5] dark:bg-[#202c33] p-3">
+                <ChatInputFooter
+                    onSend={handleSend}
+                    currentUser={currentUser}
+                    quickReplies={quickReplies}
+                    users={users}
+                />
+            </footer>
         </div>
     );
 };

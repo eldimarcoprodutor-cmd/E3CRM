@@ -32,11 +32,45 @@
             'status-warning': '#F59E0B',
             'status-error': '#EF4444',
             'border-neutral': '#E5E7EB',
-          }
+            'wa-green-light': '#dcf8c6',
+            'wa-green-dark': '#056162',
+            'wa-bg': '#eae6df',
+            'wa-bg-dark': '#0b141a',
+           }
         },
       }
     }
   </script>
+  <style>
+    body {
+        --wa-light-bg-url: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARMAAAARCAMAAAA/1z2+AAAACVBMVEX//93d3ePj4//axACPAAAAAXRSTlMAQObYZgAAAElJREFUeNrtwQENAAAAwiD7p7bHBwwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4G4ADQAAAYnbNWkAAAAASUVORK5CYII=');
+        --wa-dark-bg-url: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARMAAAARCAMAAAA/1z2+AAAAA1BMVEUUESwG50fUAAAAAXRSTlMAQObYZgAAAAtJREFUeNrtwQENAAAAwiD7p30PBwwAAAAA8A8aAAGo8w9GAAAAAElFTkSuQmCC');
+    }
+    html.light body.wa-chat-bg {
+        background-image: var(--wa-light-bg-url);
+        background-color: #E5DDD5;
+    }
+    html.dark body.wa-chat-bg {
+        background-image: var(--wa-dark-bg-url);
+        background-color: #0b141a;
+    }
+    .wa-chat-bg-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: var(--wa-light-bg-url);
+      background-color: #E5DDD5;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+    html.dark .wa-chat-bg-pattern {
+      background-image: var(--wa-dark-bg-url);
+      background-color: #0b141a;
+      opacity: 0.05;
+    }
+  </style>
 </head>
 <body class="h-full antialiased">
   <div id="root" class="h-full"></div>

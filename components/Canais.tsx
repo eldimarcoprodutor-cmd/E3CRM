@@ -1,74 +1,133 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { Channel } from '../types.ts';
 import { WhatsAppIcon } from './icons/WhatsAppIcon.tsx';
 
 const QRCodeModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onConnect: () => void;
+    onConnect: (channelName: string) => void;
 }> = ({ isOpen, onClose, onConnect }) => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [step, setStep] = useState<'name' | 'scanning' | 'success' | 'error'>('name');
+    const [channelName, setChannelName] = useState('');
+    const [error, setError] = useState('');
 
+    const resetState = useCallback(() => {
+        setStep('name');
+        setChannelName('');
+        setError('');
+    }, []);
+    
     useEffect(() => {
-        let qrTimer: ReturnType<typeof setTimeout>;
-        let connectTimer: ReturnType<typeof setTimeout>;
-
-        if (isOpen) {
-            setIsLoading(true);
-            setQrCodeUrl('');
-
-            // Simulate fetching QR code from an API
-            qrTimer = setTimeout(() => {
-                setQrCodeUrl('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png');
-                setIsLoading(false);
-
-                // After showing the QR code, simulate a successful connection after some time
-                connectTimer = setTimeout(() => {
-                    onConnect();
-                }, 8000); // 8 seconds to "scan"
-
-            }, 2000); // 2 seconds to "generate"
+        if (!isOpen) {
+            // Reset state after a short delay to allow for closing animation
+            const timer = setTimeout(resetState, 300);
+            return () => clearTimeout(timer);
         }
+    }, [isOpen, resetState]);
 
-        return () => {
-            clearTimeout(qrTimer);
-            clearTimeout(connectTimer);
-        };
-    }, [isOpen, onConnect]);
+
+    const handleNameSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!channelName.trim()) {
+            setError('Por favor, insira um nome para o canal.');
+            return;
+        }
+        setError('');
+        setStep('scanning');
+    };
+    
+    const handleSimulatedConnection = () => {
+        setStep('success');
+        setTimeout(() => {
+            onConnect(channelName);
+            resetState();
+        }, 1500);
+    };
     
     if (!isOpen) return null;
 
+    const renderStepContent = () => {
+        switch (step) {
+            case 'name':
+                return (
+                    <form onSubmit={handleNameSubmit} className="space-y-4">
+                        <div>
+                            <label htmlFor="channelName" className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Nome do Canal</label>
+                            <input
+                                id="channelName"
+                                type="text"
+                                value={channelName}
+                                onChange={e => setChannelName(e.target.value)}
+                                placeholder="Ex: Time de Vendas"
+                                autoFocus
+                                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-border-neutral dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                             {error && <p className="text-xs text-status-error mt-1">{error}</p>}
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium bg-gray-200 dark:bg-gray-600 rounded-lg">Cancelar</button>
+                             <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-lg">Gerar QR Code</button>
+                        </div>
+                    </form>
+                );
+            case 'scanning':
+                return (
+                    <div className="text-center">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2Ij48cGF0aCBkPSJNMCAwaDI1NnYyNTZIMHoiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMzIgMzJoNjR2NjRIMzJ6bTMyIDMySDQ4djE2aDE2em04MCAxNmgxNnYxNmgtMTZ6bS0xNiAwaDE2djE2aC0xNnptMzIgMzJoMTZ2MTZoLTE2em0xNiAwaDE2djE2aC0xNnptLTY0LTY0aDE2djE2aC0xNnptMTYgMGgxNnYxNmgtMTZ6bTMxLTExaDF2MWgtMXptMyAzaDF2MWgtMXptLTYtNmgydjJoLTJ6bTMgM2gydjJoLTJ6bTMgM2gydjJoLTJ6bS05LTloMnYyaC0yem0zIDNoMnYyaC0yem0zIDNoMnYyaC0yem0tOS05aDJ2MmgtMnptMyAzaDJ2MmgtMnptMyAzaDJ2MmgtMnptNjQgNjRoMTZ2MTZoLTE2em0xNiAwaDE2djE2aC0xNnptLTMxLTExaDF2MWgtMXptMyAzaDF2MWgtMXptLTYtNmgydjJoLTJ6bTMgM2gydjJoLTJ6bTMgM2gydjJoLTJ6bS05LTloMnYyaC0yem0zIDNoMnYyaC0yem0zIDNoMnYyaC0yem0tOS05aDJ2MmgtMnptMyAzaDJ2MmgtMnptMyAzaDJ2MmgtMnptLTY0LTY0aDY0djY0aC02NHptMzIgMzJINDh2MTZoMTZ6bTAgMTZoMTZ2MTZoLTE2em0xNiAwaDE2djE2aC0xNnptLTMxLTExaDF2MWgtMXptMyAzaDF2MWgtMXptLTYtNmgydjJoLTJ6bTMgM2gydjJoLTJ6bTMgM2gydjJoLTJ6bS05LTloMnYyaC0yem0zIDNoMnYyaC0yem0zIDNoMnYyaC0yem0tOS05aDJ2MmgtMnptMyAzaDJ2MmgtMnptMyAzaDJ2MmgtMnptLTMyIDMySDQ4djE2aDE2eiIgZmlsbD0iIzAwMCIvPjwvc3ZnPg==" alt="QR Code de Demonstração" className="w-64 h-64 mx-auto border dark:border-gray-600 p-2 rounded-lg bg-white" />
+                        <div className="mt-4 p-3 bg-primary-light/50 dark:bg-primary/10 rounded-lg">
+                           <p className="font-semibold text-primary-dark dark:text-primary-light">Aguardando conexão...</p>
+                           <p className="text-xs text-text-secondary dark:text-gray-400">Escaneie o código para conectar.</p>
+                        </div>
+                        <div className="mt-4">
+                             <button onClick={handleSimulatedConnection} className="w-full px-4 py-2 text-sm font-medium text-white bg-status-success hover:bg-green-700 rounded-lg">
+                                Conexão Estabelecida (Simular)
+                             </button>
+                        </div>
+                    </div>
+                );
+            case 'success':
+                 return (
+                    <div className="flex flex-col items-center justify-center h-64 text-center">
+                        <div className="w-20 h-20 rounded-full bg-status-success flex items-center justify-center">
+                            <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                         <p className="mt-4 text-lg font-semibold text-text-main dark:text-white">Canal conectado com sucesso!</p>
+                    </div>
+                );
+            case 'error':
+                 return (
+                    <div className="flex flex-col items-center justify-center h-64 text-center">
+                         <p className="text-status-error">{error}</p>
+                         <button onClick={onClose} className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-lg">Tentar Novamente</button>
+                    </div>
+                 );
+            default:
+                return null;
+        }
+    }
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md text-center">
-                <div className="flex justify-between items-center mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md">
+                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-text-main dark:text-white">Conectar Novo Canal WhatsApp</h3>
-                    <button onClick={onClose} className="text-text-secondary hover:text-text-main dark:hover:text-white text-2xl">&times;</button>
+                    <button onClick={onClose} className="text-text-secondary hover:text-text-main dark:hover:text-white text-2xl" disabled={step === 'success'}>&times;</button>
                 </div>
-
-                <div className="my-6">
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center h-64">
-                             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
-                             <p className="mt-4 text-text-secondary dark:text-gray-400">Gerando QR Code...</p>
-                        </div>
-                    ) : (
-                        <img src={qrCodeUrl} alt="QR Code" className="w-64 h-64 mx-auto border dark:border-gray-600 p-2 rounded-lg" />
-                    )}
-                </div>
-
-                <div>
-                    <p className="text-sm text-text-secondary dark:text-gray-300">
-                        1. Abra o WhatsApp no seu celular.
-                    </p>
-                    <p className="text-sm text-text-secondary dark:text-gray-300 mt-1">
-                        2. Vá para <strong>Configurações</strong> &gt; <strong>Aparelhos conectados</strong> e toque em <strong>Conectar um aparelho</strong>.
-                    </p>
-                    <p className="text-sm text-text-secondary dark:text-gray-300 mt-1">
-                        3. Aponte seu celular para esta tela para capturar o código.
-                    </p>
-                </div>
+                {renderStepContent()}
+                 {step === 'scanning' && (
+                    <div className="mt-4 text-left">
+                        <p className="text-sm text-text-secondary dark:text-gray-300">
+                            1. Abra o WhatsApp no seu celular.
+                        </p>
+                        <p className="text-sm text-text-secondary dark:text-gray-300 mt-1">
+                            2. Vá para <strong>Configurações</strong> &gt; <strong>Aparelhos conectados</strong> e toque em <strong>Conectar um aparelho</strong>.
+                        </p>
+                        <p className="text-sm text-text-secondary dark:text-gray-300 mt-1">
+                            3. Aponte seu celular para esta tela para capturar o código.
+                        </p>
+                        <p className="text-center text-xs text-gray-500 dark:text-gray-600 mt-3">(QR Code de demonstração)</p>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -83,10 +142,10 @@ interface CanaisProps {
 const Canais: React.FC<CanaisProps> = ({ channels, setChannels }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleConnect = () => {
+    const handleConnect = (name: string) => {
         const newChannel: Channel = {
             id: `channel-${Date.now()}`,
-            name: 'Comercial',
+            name: name,
             number: `+55 11 9${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
             status: 'Conectado',
         };

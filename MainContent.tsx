@@ -38,7 +38,7 @@ interface MainContentProps {
     whatsAppViewMode: 'integrado' | 'classico';
     visibleChats: Chat[];
     setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
-    handleSendMessage: (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => Promise<void>;
+    handleSendMessage: (chatId: string, messageText: string) => Promise<void>;
     quickReplies: QuickReply[];
     crmContacts: CrmContact[];
     handleUpdateContact: (updatedContact: CrmContact) => Promise<void>;
@@ -72,9 +72,14 @@ const MainContent: React.FC<MainContentProps> = (props) => {
         handleDeleteUser, setQuickReplies
     } = props;
     
+    // Render wrapper for non-WhatsApp views
+    const renderStandardView = (component: React.ReactNode) => (
+        <div className="p-6">{component}</div>
+    );
+
     switch (activeView) {
         case 'dashboard':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users} /></Suspense>;
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users} /></Suspense>);
         case 'whatsapp':
              if (channels.length === 0) {
                 return (
@@ -90,39 +95,42 @@ const MainContent: React.FC<MainContentProps> = (props) => {
                     </div>
                 );
             }
+            // The WhatsApp views have their own padding and full-height structure
             return (
-                <Suspense fallback={<LoadingIndicator message="Carregando Atendimento..." />}>
-                    {whatsAppViewMode === 'integrado' ? (
-                        <WhatsAppCrm 
-                            currentUser={currentUser}
-                            chats={visibleChats}
-                            setChats={setChats}
-                            onSendMessage={handleSendMessage}
-                            users={users}
-                            quickReplies={quickReplies}
-                            crmContacts={crmContacts}
-                            onUpdateContact={handleUpdateContact}
-                            onTakeOverChat={handleTakeOverChat}
-                            activeChatId={activeChatId}
-                            setActiveChatId={setActiveChatId}
-                        />
-                    ) : (
-                        <WhatsAppWeb 
-                            currentUser={currentUser}
-                            chats={visibleChats}
-                            setChats={setChats}
-                            onSendMessage={handleSendMessage}
-                            users={users}
-                            quickReplies={quickReplies}
-                            onTakeOverChat={handleTakeOverChat}
-                            activeChatId={activeChatId}
-                            setActiveChatId={setActiveChatId}
-                        />
-                    )}
-                </Suspense>
+                <div className="h-full">
+                    <Suspense fallback={<LoadingIndicator message="Carregando Atendimento..." />}>
+                        {whatsAppViewMode === 'integrado' ? (
+                            <WhatsAppCrm 
+                                currentUser={currentUser}
+                                chats={visibleChats}
+                                setChats={setChats}
+                                onSendMessage={handleSendMessage}
+                                users={users}
+                                quickReplies={quickReplies}
+                                crmContacts={crmContacts}
+                                onUpdateContact={handleUpdateContact}
+                                onTakeOverChat={handleTakeOverChat}
+                                activeChatId={activeChatId}
+                                setActiveChatId={setActiveChatId}
+                            />
+                        ) : (
+                            <WhatsAppWeb 
+                                currentUser={currentUser}
+                                chats={visibleChats}
+                                setChats={setChats}
+                                onSendMessage={handleSendMessage}
+                                users={users}
+                                quickReplies={quickReplies}
+                                onTakeOverChat={handleTakeOverChat}
+                                activeChatId={activeChatId}
+                                setActiveChatId={setActiveChatId}
+                            />
+                        )}
+                    </Suspense>
+                </div>
             );
         case 'crm-board':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Funil CRM..." />}><CrmBoard 
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Funil CRM..." />}><CrmBoard 
                         contacts={visibleCrmContacts} 
                         onUpdateContact={handleUpdateContact}
                         onAddContact={handleAddContact}
@@ -130,9 +138,9 @@ const MainContent: React.FC<MainContentProps> = (props) => {
                         currentUser={currentUser} 
                         onNavigateToChat={onNavigateToChat}
                         onSendEmail={setEmailTarget}
-                    /></Suspense>;
+                    /></Suspense>);
         case 'contacts':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Contatos..." />}><Contacts 
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Contatos..." />}><Contacts 
                         contacts={visibleCrmContacts} 
                         onAddContact={handleAddContact}
                         onUpdateContact={handleUpdateContact} 
@@ -140,39 +148,39 @@ const MainContent: React.FC<MainContentProps> = (props) => {
                         onDeleteContact={handleDeleteContact} 
                         onSendEmail={setEmailTarget}
                         users={users}
-                    /></Suspense>;
+                    /></Suspense>);
         case 'scheduling':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Agendamentos..." />}><Scheduling contacts={crmContacts} /></Suspense>;
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Agendamentos..." />}><Scheduling contacts={crmContacts} /></Suspense>);
         case 'broadcast':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Broadcast..." />}><Broadcast /></Suspense>;
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Broadcast..." />}><Broadcast /></Suspense>);
         case 'reports':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Relatórios..." />}><Reports users={users} chats={chats} /></Suspense>;
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Relatórios..." />}><Reports users={users} chats={chats} /></Suspense>);
         case 'chatbot':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Configurações do Chatbot..." />}><Chatbot knowledgeBase={knowledgeBase} setKnowledgeBase={setKnowledgeBase} /></Suspense>;
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Configurações do Chatbot..." />}><Chatbot knowledgeBase={knowledgeBase} setKnowledgeBase={setKnowledgeBase} /></Suspense>);
         case 'channels':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Canais..." />}><Canais channels={channels} setChannels={setChannels} /></Suspense>;
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Canais..." />}><Canais channels={channels} setChannels={setChannels} /></Suspense>);
         case 'team':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Equipe..." />}><Team 
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Equipe..." />}><Team 
                         team={users} 
                         onAddUser={handleAddUser}
                         onUpdateUser={handleUpdateUser}
                         onDeleteUser={handleDeleteUser}
                         currentUser={currentUser} 
-                    /></Suspense>;
+                    /></Suspense>);
         case 'logs':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Logs..." />}><Logs users={users} /></Suspense>;
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Logs..." />}><Logs users={users} /></Suspense>);
         case 'profile':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Perfil..." />}><Profile 
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Perfil..." />}><Profile 
                         currentUser={currentUser}
                         onUpdateUser={handleUpdateUser}
-                    /></Suspense>;
+                    /></Suspense>);
         case 'settings':
-            return <Suspense fallback={<LoadingIndicator message="Carregando Configurações..." />}><Settings 
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Configurações..." />}><Settings 
                         quickReplies={quickReplies} 
                         setQuickReplies={setQuickReplies} 
-                    /></Suspense>;
+                    /></Suspense>);
         default:
-            return <Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users}/></Suspense>;
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users}/></Suspense>);
     }
 };
 
