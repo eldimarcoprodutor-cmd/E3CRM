@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { BroadcastAiComposerModal } from './BroadcastAiComposerModal.tsx';
+import { ChatbotAiIcon } from './icons/ChatbotAiIcon.tsx';
 
 interface BroadcastHistoryItem {
     id: number;
@@ -41,6 +43,7 @@ const Broadcast: React.FC = () => {
     const [history, setHistory] = useState<BroadcastHistoryItem[]>(initialHistory);
     const [isTagDropdownOpen, setTagDropdownOpen] = useState(false);
     const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
+    const [isAiComposerOpen, setIsAiComposerOpen] = useState(false);
     
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -130,7 +133,17 @@ const Broadcast: React.FC = () => {
                         )}
 
                         <div>
-                            <label htmlFor="broadcast-message" className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Mensagem</label>
+                            <div className="flex justify-between items-center mb-1">
+                                <label htmlFor="broadcast-message" className="block text-sm font-medium text-text-secondary dark:text-gray-300">Mensagem</label>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAiComposerOpen(true)}
+                                    className="flex items-center gap-1.5 text-xs text-primary dark:text-primary/90 font-semibold hover:underline"
+                                >
+                                    <ChatbotAiIcon className="w-4 h-4" />
+                                    Gerar com IA
+                                </button>
+                            </div>
                             <textarea
                                 id="broadcast-message"
                                 rows={8}
@@ -193,6 +206,12 @@ const Broadcast: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            <BroadcastAiComposerModal
+                isOpen={isAiComposerOpen}
+                onClose={() => setIsAiComposerOpen(false)}
+                onGenerate={(generatedMessage) => setMessage(generatedMessage)}
+            />
         </div>
     );
 };

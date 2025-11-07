@@ -53,7 +53,7 @@ interface MainContentProps {
     knowledgeBase: KnowledgeBaseItem[];
     setKnowledgeBase: React.Dispatch<React.SetStateAction<KnowledgeBaseItem[]>>;
     setChannels: React.Dispatch<React.SetStateAction<Channel[]>>;
-    handleAddUser: (newUser: Omit<User, 'id' | "password"> & { password?: string | undefined; }) => Promise<void>;
+    handleAddUser: (newUser: Omit<User, 'id'>) => Promise<void>;
     handleUpdateUser: (updatedUser: User) => Promise<void>;
     handleDeleteUser: (userId: string) => Promise<void>;
     setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;

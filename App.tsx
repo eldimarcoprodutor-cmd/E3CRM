@@ -23,15 +23,14 @@ const LoadingIndicator: React.FC<{ message: string }> = ({ message }) => (
 
 /**
  * Resets the database by deleting all data from key tables and then creates a single primary user.
- * This ensures a clean slate on every application load.
+ * This is intended for the initial setup of the application.
  */
 const resetAndCreatePrimaryUser = async () => {
     const { supabase } = await import('./services/supabase.ts');
     console.log("Iniciando a redefinição e criação do usuário primário...");
 
     // Order of deletion is important to respect foreign key constraints
-    // Removed 'activities' as the table does not exist.
-    const tablesToDelete = ['messages', 'chats', 'quick_replies', 'knowledge_base', 'crm_contacts', 'users'];
+    const tablesToDelete = ['messages', 'chats', 'quick_replies', 'knowledge_base', 'crm_contacts', 'profiles'];
     
     for (const table of tablesToDelete) {
         console.log(`Removendo todos os registros da tabela: ${table}...`);
@@ -46,10 +45,10 @@ const resetAndCreatePrimaryUser = async () => {
 
     console.log("Criando o usuário primário (Gerente)...");
     const { data: newUser, error: insertError } = await supabase
-        .from('users')
+        .from('profiles')
         .insert({
             name: 'Gerente Principal',
-            email: 'gerente@e3crm.com',
+            login: 'eldimarcoprodutor@gmail.com',
             password: 'password', // In a real app, this should be securely hashed.
             role: 'Gerente',
             avatar_url: 'https://i.pravatar.cc/150?u=gerente'
@@ -85,18 +84,18 @@ const App: React.FC = () => {
         return (localStorage.getItem('theme') as Theme) || 'system';
     });
 
-    const handleLogin = async (email: string, password: string): Promise<{ success: boolean, error?: string }> => {
+    const handleLogin = async (login: string, password: string): Promise<{ success: boolean, error?: string }> => {
         const { supabase } = await import('./services/supabase.ts');
         const { data: user, error } = await supabase
-            .from('users')
+            .from('profiles')
             .select('*')
-            .eq('email', email.toLowerCase())
+            .eq('login', login.toLowerCase())
             .eq('password', password)
             .single();
     
         if (error || !user) {
             console.error("Supabase login error:", error);
-            return { success: false, error: 'Email ou senha inválidos.' };
+            return { success: false, error: 'Login ou senha inválidos.' };
         }
     
         setCurrentUser(user);
@@ -108,26 +107,26 @@ const App: React.FC = () => {
         setActiveView('dashboard');
     };
     
-    const handleSignUp = async (name: string, email: string, password: string): Promise<{ success: boolean, error?: string }> => {
+    const handleSignUp = async (name: string, login: string, password: string): Promise<{ success: boolean, error?: string }> => {
         const { supabase } = await import('./services/supabase.ts');
         
         const newUser: Omit<User, 'id'> = {
             name,
-            email: email.toLowerCase(),
+            login: login.toLowerCase(),
             password,
             role: 'Atendente',
             avatar_url: `https://i.pravatar.cc/150?u=${Date.now()}`,
         };
         
         const { data: insertedUser, error: insertError } = await supabase
-            .from('users')
+            .from('profiles')
             .insert([newUser])
             .select()
             .single();
     
         if (insertError) {
             if (insertError.message.includes('duplicate key value violates unique constraint')) {
-                return { success: false, error: 'Este email já está em uso.' };
+                return { success: false, error: 'Este login (email) já está em uso.' };
             }
             console.error("Supabase insert error:", insertError);
             return { success: false, error: 'Não foi possível criar a conta.' };
@@ -209,8 +208,8 @@ const App: React.FC = () => {
             { data: qrData },
             { data: kbData }
         ] = await Promise.all([
-             supabase.from('users').select('*'),
-             supabase.from('crm_contacts').select('*'), // Removed join with non-existent 'activities' table
+             supabase.from('profiles').select('*'),
+             supabase.from('crm_contacts').select('*'), 
              supabase.from('chats').select('*, messages(*)'),
              supabase.from('quick_replies').select('*'),
              supabase.from('knowledge_base').select('*')
@@ -230,7 +229,18 @@ const App: React.FC = () => {
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                await resetAndCreatePrimaryUser();
+                const { supabase } = await import('./services/supabase.ts');
+                const { data: existingUsers, error } = await supabase.from('profiles').select('id').limit(1);
+
+                if (error && error.code !== '42P01') { // 42P01 is "undefined_table" for Postgres
+                    console.error("Erro ao verificar usuários existentes:", error);
+                } else if (!existingUsers || existingUsers.length === 0) {
+                    console.log("Nenhum usuário encontrado. Iniciando o banco de dados pela primeira vez...");
+                    await resetAndCreatePrimaryUser();
+                } else {
+                    console.log("Usuários existentes encontrados. Ignorando a recriação do banco de dados.");
+                }
+
             } catch (error) {
                 console.error("Falha na inicialização da aplicação:", error);
             } finally {
@@ -315,8 +325,9 @@ const App: React.FC = () => {
 
     const handleUpdateContact = async (updatedContact: CrmContact) => {
         const { supabase } = await import('./services/supabase.ts');
-    
-        const { error } = await supabase.from('crm_contacts').update(updatedContact).eq('id', updatedContact.id);
+        
+        const { id, ...contactData } = updatedContact;
+        const { error } = await supabase.from('crm_contacts').update(contactData).eq('id', id);
     
         if (!error) {
             // Update local state directly as we are no longer waiting for DB-generated IDs for activities.
@@ -336,7 +347,7 @@ const App: React.FC = () => {
 
     const handleAddUser = async (newUser: Omit<User, 'id' | 'password'> & { password?: string }) => {
         const { supabase } = await import('./services/supabase.ts');
-        const { data, error } = await supabase.from('users').insert([newUser]).select().single();
+        const { data, error } = await supabase.from('profiles').insert([newUser]).select().single();
         if (!error && data) {
             setUsers(current => [...current, data]);
         } else {
@@ -347,8 +358,8 @@ const App: React.FC = () => {
 
     const handleUpdateUser = async (updatedUser: User) => {
         const { supabase } = await import('./services/supabase.ts');
-        const { password, ...userData } = updatedUser;
-        const { data, error } = await supabase.from('users').update(userData).eq('id', updatedUser.id).select().single();
+        const { id, password, ...userData } = updatedUser;
+        const { data, error } = await supabase.from('profiles').update(userData).eq('id', id).select().single();
         if (!error && data) {
             setUsers(current => current.map(u => u.id === data.id ? data : u));
             if (currentUser?.id === data.id) {
@@ -362,7 +373,7 @@ const App: React.FC = () => {
     
     const handleDeleteUser = async (userId: string) => {
         const { supabase } = await import('./services/supabase.ts');
-        const { error } = await supabase.from('users').delete().eq('id', userId);
+        const { error } = await supabase.from('profiles').delete().eq('id', userId);
         if (!error) {
             setUsers(current => current.filter(u => u.id !== userId));
         } else {

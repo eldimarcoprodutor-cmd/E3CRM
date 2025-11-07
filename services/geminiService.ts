@@ -374,3 +374,36 @@ Sentimento:`;
         return 'Neutro';
     }
 };
+
+/**
+ * Generates a WhatsApp broadcast message using AI.
+ * @param objective The goal of the message.
+ * @param keyInfo The core information or offer.
+ * @param tone The desired tone of the message.
+ * @returns A generated broadcast message as a string.
+ */
+export const generateBroadcastMessage = async (objective: string, keyInfo: string, tone: string): Promise<string> => {
+    try {
+        const prompt = `
+          Você é um especialista em marketing para WhatsApp. Sua tarefa é criar uma mensagem de broadcast curta, clara e persuasiva.
+          A mensagem deve ser otimizada para engajamento no WhatsApp. Use emojis de forma inteligente e natural.
+          Inclua a variável {{nome}} para personalização, que será substituída pelo nome do contato.
+
+          **Objetivo:** ${objective}
+          **Tom de Voz:** ${tone}
+          **Informações Principais:** ${keyInfo}
+
+          Crie a mensagem de broadcast agora. Retorne apenas o texto da mensagem.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+
+        return response.text.trim();
+    } catch (error) {
+        console.error("Error generating broadcast message:", error);
+        throw new Error("Falha ao gerar mensagem de broadcast.");
+    }
+};

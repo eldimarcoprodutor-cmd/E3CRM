@@ -1,18 +1,20 @@
+
+
 import React, { useState } from 'react';
 import type { User } from '../types.ts';
 import { ChatIcon } from './icons/ChatIcon.tsx';
 
 interface LoginProps {
     users: User[];
-    onLogin: (email: string, password: string) => Promise<{ success: boolean, error?: string }>;
-    onSignUp: (name: string, email: string, password: string) => Promise<{ success: boolean, error?: string }>;
+    onLogin: (login: string, password: string) => Promise<{ success: boolean, error?: string }>;
+    onSignUp: (name: string, login: string, password: string) => Promise<{ success: boolean, error?: string }>;
 }
 
 const Login: React.FC<LoginProps> = ({ users, onLogin, onSignUp }) => {
     const [isLoginView, setIsLoginView] = useState(true);
 
     // Common state
-    const [email, setEmail] = useState('');
+    const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
@@ -24,13 +26,11 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, onSignUp }) => {
         e.preventDefault();
         setError('');
 
-        const result = await onLogin(email, password);
+        const result = await onLogin(login, password);
 
         if (!result.success) {
-            setError(result.error || 'Email ou senha inválidos.');
+            setError(result.error || 'Login ou senha inválidos.');
         }
-        // On success, the App component will set the currentUser and re-render,
-        // so we don't need to do anything else here.
     };
     
     const handleSignUpSubmit = async (e: React.FormEvent) => {
@@ -42,18 +42,17 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, onSignUp }) => {
             return;
         }
     
-        const result = await onSignUp(name, email, password);
+        const result = await onSignUp(name, login, password);
         if (!result.success) {
             setError(result.error || 'Não foi possível criar a conta.');
         }
-        // On success, the App component handles the login automatically
     };
 
     const toggleView = () => {
         setIsLoginView(!isLoginView);
         // Clear all fields and errors when switching views
         setName('');
-        setEmail('');
+        setLogin('');
         setPassword('');
         setConfirmPassword('');
         setError('');
@@ -79,8 +78,8 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, onSignUp }) => {
                         {/* Login Form Fields */}
                         <div className="rounded-md shadow-sm -space-y-px">
                              <div>
-                                <label htmlFor="email-address" className="sr-only">Email</label>
-                                <input id="email-address" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Email"/>
+                                <label htmlFor="login-address" className="sr-only">Email (Login)</label>
+                                <input id="login-address" name="login" type="email" autoComplete="email" required value={login} onChange={(e) => setLogin(e.target.value)} className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Email (Login)"/>
                             </div>
                             <div>
                                 <label htmlFor="password" className="sr-only">Senha</label>
@@ -103,8 +102,8 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, onSignUp }) => {
                                 <input id="name" name="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Nome completo"/>
                             </div>
                             <div>
-                                <label htmlFor="email-address-signup" className="sr-only">Email</label>
-                                <input id="email-address-signup" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Email"/>
+                                <label htmlFor="login-address-signup" className="sr-only">Email (Login)</label>
+                                <input id="login-address-signup" name="login" type="email" required value={login} onChange={(e) => setLogin(e.target.value)} className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Email (Login)"/>
                             </div>
                              <div>
                                 <label htmlFor="password-signup" className="sr-only">Senha</label>
@@ -134,7 +133,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin, onSignUp }) => {
                 {isLoginView && (
                     <div className="text-center text-xs text-text-secondary dark:text-gray-500 pt-4">
                         <p>Usuário primário criado:</p>
-                        <p className="font-semibold mt-1">Email: gerente@e3crm.com</p>
+                        <p className="font-semibold mt-1">Login: eldimarcoprodutor@gmail.com</p>
                         <p className="font-semibold">Senha: password</p>
                     </div>
                 )}

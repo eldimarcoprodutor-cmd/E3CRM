@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import type { User } from '../types.ts';
 
@@ -8,19 +10,19 @@ interface ProfileProps {
 
 const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
     const [profileName, setProfileName] = useState(currentUser.name);
-    const [profileEmail, setProfileEmail] = useState(currentUser.email || '');
+    const [profileLogin, setProfileLogin] = useState(currentUser.login || '');
     const [isSaving, setIsSaving] = useState(false);
 
     // Update form if currentUser changes, e.g., via the user switcher in the header
     useEffect(() => {
         setProfileName(currentUser.name);
-        setProfileEmail(currentUser.email || '');
+        setProfileLogin(currentUser.login || '');
     }, [currentUser]);
     
     const handleProfileSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
-        const updatedUser = { ...currentUser, name: profileName, email: profileEmail };
+        const updatedUser = { ...currentUser, name: profileName, login: profileLogin };
         
         await onUpdateUser(updatedUser);
         
@@ -53,12 +55,12 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Email</label>
+                        <label htmlFor="login" className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Email (Login)</label>
                         <input
                             type="email"
-                            id="email"
-                            value={profileEmail}
-                            onChange={e => setProfileEmail(e.target.value)}
+                            id="login"
+                            value={profileLogin}
+                            onChange={e => setProfileLogin(e.target.value)}
                             className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-border-neutral dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                     </div>

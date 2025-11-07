@@ -1,9 +1,10 @@
+
 export interface User {
   id: string;
   name: string;
   avatar_url: string;
   role: 'Gerente' | 'Atendente';
-  email: string;
+  login: string;
   password?: string;
 }
 

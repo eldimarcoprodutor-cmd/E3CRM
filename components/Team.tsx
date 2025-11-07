@@ -12,11 +12,11 @@ interface TeamProps {
 const TeamMemberModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onSave: (member: Omit<User, 'id'> & { id?: string; password?: string }) => void;
+    onSave: (member: Omit<User, 'id'> & { id?: string; password?: string; }) => void;
     memberToEdit: User | null;
 }> = ({ isOpen, onClose, onSave, memberToEdit }) => {
     const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
+    const [login, setLogin] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
     const [role, setRole] = useState<'Gerente' | 'Atendente'>('Atendente');
     const isEditing = !!memberToEdit;
@@ -24,13 +24,13 @@ const TeamMemberModal: React.FC<{
     useEffect(() => {
         if (memberToEdit) {
             setName(memberToEdit.name);
-            setEmail(memberToEdit.email);
+            setLogin(memberToEdit.login);
             setAvatarUrl(memberToEdit.avatar_url);
             setRole(memberToEdit.role);
         } else {
             // Reset form for new member
             setName('');
-            setEmail('');
+            setLogin('');
             setAvatarUrl('');
             setRole('Atendente');
         }
@@ -40,11 +40,11 @@ const TeamMemberModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (name.trim() && role && email.trim()) {
+        if (name.trim() && role && login.trim()) {
             onSave({
                 id: memberToEdit?.id,
                 name,
-                email,
+                login,
                 avatar_url: avatarUrl,
                 role,
                 password: memberToEdit?.password || 'password', // Default password for new users
@@ -65,8 +65,8 @@ const TeamMemberModal: React.FC<{
                         <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg"/>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Email</label>
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg"/>
+                        <label className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Email (Login)</label>
+                        <input type="email" value={login} onChange={e => setLogin(e.target.value)} required className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg"/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">URL do Avatar (Opcional)</label>
@@ -103,13 +103,13 @@ const Team: React.FC<TeamProps> = ({ team, currentUser, onAddUser, onUpdateUser,
         setIsModalOpen(true);
     };
 
-    const handleSave = async (memberData: Omit<User, 'id'> & { id?: string; password?: string }) => {
+    const handleSave = async (memberData: Omit<User, 'id'> & { id?: string; password?: string; }) => {
         if (memberData.id) { // Editing
             await onUpdateUser(memberData as User);
         } else { // Adding
             const newUser: Omit<User, 'id'> = {
                 name: memberData.name,
-                email: memberData.email,
+                login: memberData.login,
                 avatar_url: memberData.avatar_url || `https://i.pravatar.cc/150?u=${Date.now()}`,
                 role: memberData.role,
                 password: 'password'
