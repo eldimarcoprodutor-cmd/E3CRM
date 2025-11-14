@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo } from 'react';
 import type { CrmContact, User } from '../types.ts';
 import { EmailIcon } from './icons/EmailIcon.tsx';
@@ -217,7 +219,7 @@ const AddOpportunityModal: React.FC<{
             owner_id: ownerId,
             tags: [],
             avatar_url: `https://i.pravatar.cc/150?u=${Date.now()}`,
-            last_interaction: new Date().toISOString().split('T')[0],
+            // last_interaction removed to fix PGRST204 error
             temperature,
             next_action_date: nextActionDate,
             lead_source: leadSource,
@@ -322,10 +324,10 @@ const CrmBoard: React.FC<CrmBoardProps> = ({ contacts, onUpdateContact, onAddCon
             const updatedContact = {
                 ...contactToMove,
                 pipeline_stage: newStage,
-                last_interaction: new Date().toISOString().split('T')[0],
+                // last_interaction removed to fix PGRST204 error
             };
 
-            onUpdateContact(updatedContact as CrmContact);
+            onUpdateContact(updatedContact);
         }
     };
 

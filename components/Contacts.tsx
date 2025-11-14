@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo } from 'react';
 import type { CrmContact, User } from '../types.ts';
 import { ContactDetailModal } from './ContactDetailModal.tsx';
@@ -17,7 +19,8 @@ const AddContactModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
     onAdd: (contact: Omit<CrmContact, 'id'>) => void;
-}> = ({ isOpen, onClose, onAdd }) => {
+    currentUser: User;
+}> = ({ isOpen, onClose, onAdd, currentUser }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -34,8 +37,8 @@ const AddContactModal: React.FC<{
             avatar_url: `https://i.pravatar.cc/150?u=${Date.now()}`,
             tags: tags.split(',').map(t => t.trim()).filter(Boolean),
             pipeline_stage: 'Contato',
-            last_interaction: new Date().toISOString().split('T')[0],
-            owner_id: '1', // Default to manager
+            // last_interaction removed as it is not in DB schema
+            owner_id: currentUser.id,
             value: 0,
             temperature: 'Frio',
             next_action_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
@@ -154,6 +157,7 @@ const Contacts: React.FC<ContactsProps> = ({ contacts, onAddContact, onUpdateCon
                 isOpen={isAddModalOpen}
                 onClose={() => setAddModalOpen(false)}
                 onAdd={onAddContact}
+                currentUser={currentUser}
             />
 
             {selectedContact && (

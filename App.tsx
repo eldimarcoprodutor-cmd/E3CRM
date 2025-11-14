@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
@@ -387,6 +386,11 @@ const App: React.FC = () => {
         const { data, error } = await supabase.from('crm_contacts').insert([newContact]).select().single();
         if(!error && data) {
             setCrmContacts(current => [data, ...current]);
+        } else {
+            const errorMessage = error?.message || 'Ocorreu um erro desconhecido.';
+            const errorDetails = error?.details || '';
+            console.error("Failed to add contact:", error);
+            alert(`Falha ao adicionar o contato: ${errorMessage} ${errorDetails ? `\nDetalhes: ${errorDetails}` : ''}`);
         }
     };
 

@@ -53,7 +53,7 @@ export interface CrmContact {
   avatar_url: string;
   tags: string[];
   pipeline_stage: 'Contato' | 'Qualificação' | 'Proposta' | 'Fechado' | 'Perdido';
-  last_interaction: string;
+  last_interaction?: string;
   owner_id: string;
   value: number;
   temperature: 'Quente' | 'Morno' | 'Frio';
