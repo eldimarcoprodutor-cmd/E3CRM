@@ -7,7 +7,7 @@ interface WhatsAppCrmProps {
     currentUser: User;
     chats: Chat[];
     setChats: (updater: (chats: Chat[]) => Chat[]) => void;
-    onSendMessage: (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
+    onSendMessage: (chatId: string, messageText: string) => void;
     users: User[];
     quickReplies: QuickReply[];
     crmContacts: CrmContact[];

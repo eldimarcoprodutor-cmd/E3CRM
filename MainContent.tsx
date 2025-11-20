@@ -1,3 +1,4 @@
+
 import React, { lazy, Suspense } from 'react';
 import type { User, Chat, Message, CrmContact, QuickReply, KnowledgeBaseItem, Channel } from './types.ts';
 import { WhatsAppIcon } from './components/icons/WhatsAppIcon.tsx';
@@ -79,7 +80,15 @@ const MainContent: React.FC<MainContentProps> = (props) => {
 
     switch (activeView) {
         case 'dashboard':
-            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users} /></Suspense>);
+            return renderStandardView(
+                <Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}>
+                    <Dashboard 
+                        contacts={visibleCrmContacts} 
+                        users={users} 
+                        onUpdateContact={handleUpdateContact}
+                    />
+                </Suspense>
+            );
         case 'whatsapp':
              if (channels.length === 0) {
                 return (
@@ -180,7 +189,7 @@ const MainContent: React.FC<MainContentProps> = (props) => {
                         setQuickReplies={setQuickReplies} 
                     /></Suspense>);
         default:
-            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users}/></Suspense>);
+            return renderStandardView(<Suspense fallback={<LoadingIndicator message="Carregando Dashboard..." />}><Dashboard contacts={visibleCrmContacts} users={users} onUpdateContact={handleUpdateContact}/></Suspense>);
     }
 };
 

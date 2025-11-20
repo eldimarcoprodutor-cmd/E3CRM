@@ -2,13 +2,8 @@ import { GoogleGenAI, Chat, FunctionDeclaration, Type, GenerateContentResponse }
 // Fix: Import `KnowledgeBaseItem` to resolve a type error.
 import type { CrmContact, User, AiChatbotResponse, KnowledgeBaseItem } from '../types.ts';
 
-// Get the API key from localStorage. Provide an empty string as a fallback.
-const GEMINI_API_KEY = localStorage.getItem('gemini_api_key') || '';
-
-// Initialize the client with the key from localStorage.
-// If the key is not set, API calls will fail, which is the expected behavior.
-// The UI should guide the user to set it.
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+// Initialize the client with the key from the environment variable.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // A single, persistent chat instance for the internal AI assistant
 let aiChat: Chat | null = null;
@@ -95,19 +90,15 @@ const executeFunctionCall = (functionCall: GenerateContentResponse['functionCall
  * @returns The chatbot's response object.
  */
 export const askAiChatbot = async (message: string, contacts: CrmContact[], currentUser: User): Promise<AiChatbotResponse> => {
-    if (!GEMINI_API_KEY) {
-        return { text: "A chave de API do Gemini não foi configurada. Por favor, adicione-a na tela de Configurações." };
-    }
     try {
         const chat = getAiChat();
-        let response = await chat.sendMessage(message);
+        let response = await chat.sendMessage({ message });
 
         let contactThatWasUpdated: CrmContact | undefined = undefined;
         let currentContacts = [...contacts]; // Make a copy to update during the loop
 
         while (response.functionCalls && response.functionCalls.length > 0) {
             const functionCalls = response.functionCalls;
-            // Fix: Correctly format function responses for the Chat API.
             const functionResponseParts = [];
 
             for (const fc of functionCalls) {
@@ -126,11 +117,10 @@ export const askAiChatbot = async (message: string, contacts: CrmContact[], curr
             }
 
             // Send the function responses back to the model
-            // Fix: The chat.sendMessage method expects an array of Parts directly for function responses, not an object with a 'parts' property.
-            response = await chat.sendMessage(functionResponseParts);
+            response = await chat.sendMessage({ message: functionResponseParts });
         }
 
-        return { text: response.text, updatedContact: contactThatWasUpdated };
+        return { text: response.text || "", updatedContact: contactThatWasUpdated };
 
     } catch (error) {
         console.error("Error asking AI Chatbot:", error);
@@ -146,7 +136,6 @@ export const askAiChatbot = async (message: string, contacts: CrmContact[], curr
  * @returns The rewritten message from the AI.
  */
 export const generateHumanizedResponse = async (baseMessage: string, tone: string): Promise<string> => {
-    if (!GEMINI_API_KEY) throw new Error("A chave de API do Gemini não foi configurada.");
     try {
         const prompt = `Reescreva a seguinte mensagem com um tom ${tone} e humanizado. A mensagem deve ser clara, concisa e apropriada para uma comunicação com o cliente via WhatsApp. Mantenha o sentido original. Mensagem original: "${baseMessage}"`;
         
@@ -155,7 +144,7 @@ export const generateHumanizedResponse = async (baseMessage: string, tone: strin
             contents: prompt,
         });
 
-        return response.text.trim();
+        return response.text ? response.text.trim() : "";
     } catch (error) {
         console.error("Error generating humanized response:", error);
         throw new Error("Falha ao se comunicar com a API do Gemini.");
@@ -180,9 +169,6 @@ interface ChatbotResponse {
  * @returns An object containing the chatbot's response and a handoff flag.
  */
 export const generateChatbotResponse = async (userInput: string, config: ChatbotConfig): Promise<ChatbotResponse> => {
-    if (!GEMINI_API_KEY) {
-        return { response: "A chave de API do Gemini não foi configurada.", requiresHandoff: true };
-    }
     try {
         const knowledgeBaseString = config.knowledgeBase.map(item => `P: ${item.question}\nR: ${item.answer}`).join('\n\n');
 
@@ -211,7 +197,7 @@ ${knowledgeBaseString}
             },
         });
 
-        let responseText = response.text.trim();
+        let responseText = response.text ? response.text.trim() : "";
         let requiresHandoff = false;
 
         if (responseText.startsWith('HANDOFF::')) {
@@ -236,7 +222,6 @@ ${knowledgeBaseString}
  * @returns A summary of the chat.
  */
 export const generateChatSummary = async (chatHistory: string): Promise<string> => {
-    if (!GEMINI_API_KEY) return "A chave de API do Gemini não foi configurada.";
     try {
         const prompt = `Resuma a seguinte conversa de atendimento ao cliente em um único parágrafo conciso. Destaque o principal problema do cliente e a resolução (se houver).
 
@@ -252,7 +237,7 @@ Resumo:`;
             contents: prompt,
         });
         
-        return response.text.trim();
+        return response.text ? response.text.trim() : "";
     } catch (error) {
         console.error("Error generating chat summary:", error);
         throw new Error("Falha ao gerar resumo do chat.");
@@ -265,7 +250,6 @@ Resumo:`;
  * @returns A suggested next action.
  */
 export const suggestNextAction = async (chatHistory: string): Promise<string> => {
-    if (!GEMINI_API_KEY) return "A chave de API do Gemini não foi configurada.";
     try {
         const prompt = `Com base na conversa a seguir, sugira a próxima ação mais apropriada para o atendente. As ações podem ser: "agendar reunião", "enviar proposta", "enviar documentação", "adicionar tag: interesse-produto-X", "encerrar e resolver", ou "encaminhar para suporte técnico". Responda apenas com a ação sugerida.
 
@@ -281,7 +265,7 @@ Próxima Ação:`;
             contents: prompt,
         });
 
-        return response.text.trim();
+        return response.text ? response.text.trim() : "";
     } catch (error) {
         console.error("Error suggesting next action:", error);
         throw new Error("Falha ao sugerir próxima ação.");
@@ -294,7 +278,6 @@ Próxima Ação:`;
  * @returns An array of 3 reply suggestions.
  */
 export const generateReplySuggestion = async (chatHistory: string): Promise<string[]> => {
-    if (!GEMINI_API_KEY) return ["A chave de API não foi configurada.", "", ""];
     try {
         const prompt = `Com base na conversa de atendimento a seguir, gere 3 sugestões de respostas curtas e úteis para o atendente. As respostas devem ser apropriadas para o WhatsApp. Retorne as sugestões separadas pelo caractere "|".
 
@@ -310,7 +293,7 @@ Sugestões:`;
             contents: prompt,
         });
         
-        const text = response.text.trim();
+        const text = response.text ? response.text.trim() : "";
         return text.split('|').map(s => s.trim()).slice(0, 3);
     } catch (error) {
         console.error("Error generating reply suggestions:", error);
@@ -324,14 +307,13 @@ Sugestões:`;
  * @returns The corrected text.
  */
 export const correctSpellingAndGrammar = async (text: string): Promise<string> => {
-    if (!GEMINI_API_KEY) throw new Error("A chave de API do Gemini não foi configurada.");
     try {
         const prompt = `Corrija a ortografia e a gramática do texto a seguir, mantendo o sentido original. Retorne apenas o texto corrigido. Texto: "${text}"`;
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
-        return response.text.trim();
+        return response.text ? response.text.trim() : "";
     } catch (error) {
         console.error("Error correcting spelling and grammar:", error);
         throw new Error("Falha ao corrigir o texto.");
@@ -344,14 +326,13 @@ export const correctSpellingAndGrammar = async (text: string): Promise<string> =
  * @returns The expanded text.
  */
 export const expandText = async (text: string): Promise<string> => {
-    if (!GEMINI_API_KEY) throw new Error("A chave de API do Gemini não foi configurada.");
     try {
         const prompt = `Expanda o texto a seguir para uma frase mais completa e profissional, adequada para atendimento ao cliente. Retorne apenas o texto expandido. Texto: "${text}"`;
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
-        return response.text.trim();
+        return response.text ? response.text.trim() : "";
     } catch (error) {
         console.error("Error expanding text:", error);
         throw new Error("Falha ao expandir o texto.");
@@ -364,7 +345,6 @@ export const expandText = async (text: string): Promise<string> => {
  * @returns The sentiment as 'Positivo', 'Neutro', or 'Negativo'.
  */
 export const analyzeSentiment = async (chatHistory: string): Promise<'Positivo' | 'Neutro' | 'Negativo'> => {
-    if (!GEMINI_API_KEY) return 'Neutro';
     try {
         const prompt = `Analise o sentimento da última mensagem do cliente na conversa a seguir. Responda APENAS com uma das seguintes palavras: Positivo, Neutro, ou Negativo.
 
@@ -380,7 +360,7 @@ Sentimento:`;
             contents: prompt,
         });
         
-        const text = response.text.trim();
+        const text = response.text ? response.text.trim() : "Neutro";
         if (text === 'Positivo' || text === 'Neutro' || text === 'Negativo') {
             return text;
         }
@@ -401,7 +381,6 @@ Sentimento:`;
  * @returns A generated broadcast message as a string.
  */
 export const generateBroadcastMessage = async (objective: string, keyInfo: string, tone: string): Promise<string> => {
-    if (!GEMINI_API_KEY) throw new Error("A chave de API do Gemini não foi configurada.");
     try {
         const prompt = `
           Você é um especialista em marketing para WhatsApp. Sua tarefa é criar uma mensagem de broadcast curta, clara e persuasiva.
@@ -420,7 +399,7 @@ export const generateBroadcastMessage = async (objective: string, keyInfo: strin
             contents: prompt,
         });
 
-        return response.text.trim();
+        return response.text ? response.text.trim() : "";
     } catch (error) {
         console.error("Error generating broadcast message:", error);
         throw new Error("Falha ao gerar mensagem de broadcast.");

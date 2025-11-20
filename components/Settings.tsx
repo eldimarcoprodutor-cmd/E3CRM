@@ -84,14 +84,6 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplies }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingReply, setEditingReply] = useState<QuickReply | null>(null);
-    const [apiKey, setApiKey] = useState('');
-
-    useEffect(() => {
-        const savedKey = localStorage.getItem('gemini_api_key');
-        if (savedKey) {
-            setApiKey(savedKey);
-        }
-    }, []);
 
     const handleOpenModal = (reply: QuickReply | null) => {
         setEditingReply(reply);
@@ -132,17 +124,6 @@ const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplies }) =>
             }
         }
     };
-    
-    const handleSaveApiKey = () => {
-        if (!apiKey.trim()) {
-            alert('Por favor, insira uma chave de API válida.');
-            return;
-        }
-        localStorage.setItem('gemini_api_key', apiKey);
-        alert('Chave de API salva com sucesso! A página será recarregada para aplicar a nova chave.');
-        window.location.reload();
-    };
-
 
     return (
         <div>
@@ -171,35 +152,6 @@ const Settings: React.FC<SettingsProps> = ({ quickReplies, setQuickReplies }) =>
                             </div>
                         ))}
                      </div>
-                </div>
-
-                {/* API Key */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg h-fit">
-                    <h2 className="text-xl font-semibold mb-4 text-text-main dark:text-white">Integração com IA (Gemini)</h2>
-                    <div className="space-y-4">
-                        <div>
-                            <label htmlFor="apiKey" className="block text-sm font-medium text-text-secondary dark:text-gray-300 mb-1">Sua Chave de API do Gemini</label>
-                            <input
-                                id="apiKey"
-                                type="password"
-                                value={apiKey}
-                                onChange={e => setApiKey(e.target.value)}
-                                placeholder="Cole sua chave de API aqui"
-                                className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg"
-                            />
-                            <p className="text-xs text-text-secondary dark:text-gray-400 mt-2">
-                                Você pode obter sua chave no <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google AI Studio</a>.
-                            </p>
-                        </div>
-                        <div className="flex justify-end">
-                            <button
-                                onClick={handleSaveApiKey}
-                                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark"
-                            >
-                                Salvar Chave
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Notifications */}

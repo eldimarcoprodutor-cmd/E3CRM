@@ -1,10 +1,12 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import type { CrmContact, User } from '../types.ts';
 import { SchedulingIcon } from './icons/SchedulingIcon.tsx';
 
 interface DashboardProps {
     contacts: CrmContact[];
     users: User[];
+    onUpdateContact: (contact: CrmContact) => void;
 }
 
 const MetricCard: React.FC<{ title: string; value: string; change?: string; isPositive?: boolean; icon: React.ReactNode }> = ({ title, value, change, isPositive, icon }) => (
@@ -46,8 +48,54 @@ const BarChart: React.FC<{ data: { label: string; value: number; color: string }
     );
 };
 
+const TaskItem: React.FC<{ task: CrmContact; onComplete: (task: CrmContact) => void }> = ({ task, onComplete }) => {
+    const [isCompleting, setIsCompleting] = useState(false);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const actionDate = new Date(task.next_action_date + 'T00:00:00');
+    const isOverdue = actionDate < today;
 
-const Dashboard: React.FC<DashboardProps> = ({ contacts, users }) => {
+    const handleComplete = () => {
+        setIsCompleting(true);
+        // Delay actual update to allow animation to play
+        setTimeout(() => {
+            onComplete(task);
+        }, 500);
+    };
+
+    return (
+        <div className={`p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg flex items-center justify-between transition-all duration-500 ease-in-out ${isCompleting ? 'opacity-0 transform translate-x-4' : 'opacity-100'}`}>
+            <div className="flex items-start gap-3 overflow-hidden">
+                <div className="pt-1">
+                    <button 
+                        onClick={handleComplete}
+                        disabled={isCompleting}
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            isCompleting 
+                                ? 'bg-status-success border-status-success text-white' 
+                                : 'border-gray-300 dark:border-gray-500 hover:border-primary dark:hover:border-primary text-transparent hover:text-primary/20'
+                        }`}
+                        aria-label="Concluir tarefa"
+                        title="Marcar como concluído"
+                    >
+                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
+                    </button>
+                </div>
+                <div>
+                    <p className={`font-semibold text-text-main dark:text-white text-sm transition-all duration-300 ${isCompleting ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
+                        {task.name}
+                    </p>
+                    <div className={`flex items-center gap-2 mt-1 text-xs ${isOverdue && !isCompleting ? 'text-status-error font-semibold' : 'text-text-secondary dark:text-gray-400'}`}>
+                        <SchedulingIcon className="w-3.5 h-3.5" />
+                        <span>{actionDate.toLocaleDateString('pt-BR', {timeZone: 'UTC'})} {isOverdue && "(Atrasado)"}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const Dashboard: React.FC<DashboardProps> = ({ contacts, users, onUpdateContact }) => {
     // Calculate KPIs
     const newLeads = contacts.filter(c => c.pipeline_stage === 'Contato').length;
     const pipelineValue = contacts.filter(c => !['Fechado', 'Perdido'].includes(c.pipeline_stage)).reduce((sum, c) => sum + c.value, 0);
@@ -72,6 +120,18 @@ const Dashboard: React.FC<DashboardProps> = ({ contacts, users }) => {
             return actionDate <= today && c.pipeline_stage !== 'Fechado' && c.pipeline_stage !== 'Perdido';
         })
         .sort((a, b) => new Date(a.next_action_date).getTime() - new Date(b.next_action_date).getTime());
+
+    const handleTaskCompletion = (task: CrmContact) => {
+        // "Completing" a task today moves the action date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const nextDateStr = tomorrow.toISOString().split('T')[0];
+        
+        onUpdateContact({
+            ...task,
+            next_action_date: nextDateStr
+        });
+    };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -113,21 +173,16 @@ const Dashboard: React.FC<DashboardProps> = ({ contacts, users }) => {
             <h2 className="text-xl font-semibold mb-4 text-text-main dark:text-white">Minhas Tarefas Hoje</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
                 {upcomingTasks.length > 0 ? (
-                    upcomingTasks.map(task => {
-                        const actionDate = new Date(task.next_action_date + 'T00:00:00');
-                        const isOverdue = actionDate < today;
-                        return (
-                            <div key={task.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                <p className="font-semibold text-text-main dark:text-white text-sm">{task.name}</p>
-                                <div className={`flex items-center gap-2 mt-1 text-xs ${isOverdue ? 'text-status-error font-semibold' : 'text-text-secondary dark:text-gray-400'}`}>
-                                    <SchedulingIcon className="w-4 h-4" />
-                                    <span>{actionDate.toLocaleDateString('pt-BR', {timeZone: 'UTC'})} {isOverdue && "(Atrasado)"}</span>
-                                </div>
-                            </div>
-                        )
-                    })
+                    upcomingTasks.map(task => (
+                        <TaskItem key={task.id} task={task} onComplete={handleTaskCompletion} />
+                    ))
                 ) : (
-                    <p className="text-sm text-center text-text-secondary dark:text-gray-400 py-4">Nenhuma tarefa pendente para hoje.</p>
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full mb-3">
+                            <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <p className="text-sm text-text-secondary dark:text-gray-400">Tudo limpo! Nenhuma tarefa pendente para hoje.</p>
+                    </div>
                 )}
             </div>
         </div>

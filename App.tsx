@@ -389,7 +389,7 @@ const App: React.FC = () => {
         } else {
             const errorMessage = error?.message || 'Ocorreu um erro desconhecido.';
             const errorDetails = error?.details || '';
-            console.error("Failed to add contact:", error);
+            console.error("Failed to add contact:", JSON.stringify(error, null, 2));
             alert(`Falha ao adicionar o contato: ${errorMessage} ${errorDetails ? `\nDetalhes: ${errorDetails}` : ''}`);
         }
     };

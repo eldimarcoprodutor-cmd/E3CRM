@@ -8,7 +8,7 @@ interface ActiveChatViewProps {
     chat: Chat;
     crmContacts: CrmContact[];
     currentUser: User;
-    onSendMessage: (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
+    onSendMessage: (chatId: string, messageText: string) => void;
     users: User[];
     quickReplies: QuickReply[];
     onTakeOverChat: (chatId: string) => void;
